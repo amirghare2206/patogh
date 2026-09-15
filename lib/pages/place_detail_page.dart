@@ -1,12 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:patogh/models/place.dart';
 import 'package:patogh/state/favorites.dart';
 import 'package:patogh/widgets/patogh_info_box.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PlaceDetailPage extends StatelessWidget {
   final Place place;
 
   const PlaceDetailPage({super.key, required this.place});
+
+  Future<void> _openMap(BuildContext context) async {
+    final query = '${place.title} ${place.area} مشهد';
+
+    final uri = Uri.https('www.google.com', '/maps/search/', <String, String>{
+      'api': '1',
+      'query': query,
+    });
+
+    final opened = await launchUrl(uri, webOnlyWindowName: '_blank');
+
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('باز کردن نقشه ممکن نشد.')));
+    }
+  }
+
+  Future<void> _copyPlaceInfo(BuildContext context) async {
+    final text =
+        '''
+${place.title}
+${place.category} • ${place.area}
+امتیاز: ${place.rating}
+فاصله: ${place.distance}
+
+${place.description}
+''';
+
+    await Clipboard.setData(ClipboardData(text: text));
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('اطلاعات پاتوق کپی شد.')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,18 +63,27 @@ class PlaceDetailPage extends StatelessWidget {
                   Row(
                     children: [
                       IconButton(
+                        tooltip: 'بازگشت',
                         onPressed: () {
                           Navigator.of(context).pop();
                         },
                         icon: const Icon(Icons.arrow_forward_rounded),
                       ),
                       const Spacer(),
+                      IconButton(
+                        tooltip: 'اشتراک‌گذاری',
+                        onPressed: () => _copyPlaceInfo(context),
+                        icon: const Icon(Icons.ios_share_rounded),
+                      ),
                       ValueListenableBuilder<Set<String>>(
                         valueListenable: favoritePlaces,
                         builder: (context, favorites, _) {
                           final isFavorite = favorites.contains(place.title);
 
                           return IconButton(
+                            tooltip: isFavorite
+                                ? 'حذف از علاقه‌مندی'
+                                : 'افزودن به علاقه‌مندی',
                             onPressed: () {
                               toggleFavorite(place.title);
                             },
@@ -129,18 +176,10 @@ class PlaceDetailPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
                   FilledButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'مسیریابی را در مرحله بعد فعال می‌کنیم.',
-                          ),
-                        ),
-                      );
-                    },
+                    onPressed: () => _openMap(context),
                     icon: const Icon(Icons.directions_rounded),
                     label: const Text(
-                      'مسیریابی',
+                      'مسیریابی روی نقشه',
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 16,
