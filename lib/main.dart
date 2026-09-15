@@ -57,11 +57,7 @@ class _PatoghHomePageState extends State<PatoghHomePage> {
           index: selectedIndex,
           children: [
             _buildHome(),
-            const _SimplePage(
-              icon: Icons.explore_rounded,
-              title: 'کشف پاتوق‌ها',
-              subtitle: 'این بخش در مرحله بعد ساخته می‌شود.',
-            ),
+           const DiscoverPage(),
             const _SimplePage(
               icon: Icons.favorite_rounded,
               title: 'علاقه‌مندی‌ها',
@@ -752,4 +748,658 @@ class CategoryItem {
   final IconData icon;
 
   const CategoryItem(this.title, this.icon);
+}
+class Place {
+  final String title;
+  final String category;
+  final String area;
+  final String rating;
+  final String distance;
+  final String description;
+  final IconData icon;
+  final Color background;
+  final Color foreground;
+
+  const Place({
+    required this.title,
+    required this.category,
+    required this.area,
+    required this.rating,
+    required this.distance,
+    required this.description,
+    required this.icon,
+    required this.background,
+    required this.foreground,
+  });
+}
+
+const List<Place> allPlaces = [
+  Place(
+    title: 'بوستان کوهسنگی',
+    category: 'گردشگری',
+    area: 'کوهسنگی',
+    rating: '۴.۸',
+    distance: '۳.۱ کیلومتر',
+    description:
+        'یکی از شناخته‌شده‌ترین فضاهای گردشگری مشهد با فضای سبز، مسیر پیاده‌روی و چشم‌انداز شهری.',
+    icon: Icons.landscape_rounded,
+    background: Color(0xFFE5F2EE),
+    foreground: Color(0xFF276A5B),
+  ),
+  Place(
+    title: 'پارک ملت',
+    category: 'تفریح',
+    area: 'وکیل‌آباد',
+    rating: '۴.۷',
+    distance: '۲.۴ کیلومتر',
+    description:
+        'فضای سبز بزرگ شهری با امکانات تفریحی، ورزشی و شهربازی.',
+    icon: Icons.park_rounded,
+    background: Color(0xFFECEAF8),
+    foreground: Color(0xFF57508A),
+  ),
+  Place(
+    title: 'طرقبه',
+    category: 'گردشگری',
+    area: 'طرقبه',
+    rating: '۴.۹',
+    distance: '۱۸ کیلومتر',
+    description:
+        'منطقه گردشگری خوش‌آب‌وهوا با طبیعت، رستوران‌ها و مسیرهای تفریحی.',
+    icon: Icons.forest_rounded,
+    background: Color(0xFFF5EEE3),
+    foreground: Color(0xFF855E3E),
+  ),
+  Place(
+    title: 'باغ ملی',
+    category: 'فرهنگی',
+    area: 'مرکز شهر',
+    rating: '۴.۴',
+    distance: '۱.۲ کیلومتر',
+    description:
+        'فضایی آرام و تاریخی در مرکز شهر، مناسب برای قدم‌زدن و استراحت.',
+    icon: Icons.account_balance_rounded,
+    background: Color(0xFFE7EFF8),
+    foreground: Color(0xFF3F6283),
+  ),
+  Place(
+    title: 'بوستان وکیل‌آباد',
+    category: 'طبیعت',
+    area: 'وکیل‌آباد',
+    rating: '۴.۶',
+    distance: '۹ کیلومتر',
+    description:
+        'بوستانی قدیمی و سرسبز با فضای مناسب برای گردش خانوادگی و طبیعت‌گردی.',
+    icon: Icons.nature_people_rounded,
+    background: Color(0xFFEAF3E4),
+    foreground: Color(0xFF50734A),
+  ),
+];
+
+class DiscoverPage extends StatefulWidget {
+  const DiscoverPage({super.key});
+
+  @override
+  State<DiscoverPage> createState() => _DiscoverPageState();
+}
+
+class _DiscoverPageState extends State<DiscoverPage> {
+  String searchText = '';
+  String selectedCategory = 'همه';
+
+  final List<String> categories = const [
+    'همه',
+    'تفریح',
+    'گردشگری',
+    'فرهنگی',
+    'طبیعت',
+  ];
+
+  List<Place> get filteredPlaces {
+    return allPlaces.where((place) {
+      final search = searchText.trim();
+
+      final matchesSearch = search.isEmpty ||
+          place.title.contains(search) ||
+          place.area.contains(search) ||
+          place.category.contains(search);
+
+      final matchesCategory =
+          selectedCategory == 'همه' ||
+          place.category == selectedCategory;
+
+      return matchesSearch && matchesCategory;
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double width =
+            constraints.maxWidth > 700 ? 700 : constraints.maxWidth;
+
+        return Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            width: width,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'کشف پاتوق‌ها',
+                        style: TextStyle(
+                          fontSize: 25,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      const Text(
+                        'جای بعدی برای تفریح و گردش رو پیدا کن',
+                        style: TextStyle(
+                          color: Color(0xFF777777),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Search
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: const Color(0xFFEAEAEA),
+                          ),
+                        ),
+                        child: TextField(
+                          onChanged: (value) {
+                            setState(() {
+                              searchText = value;
+                            });
+                          },
+                          decoration: const InputDecoration(
+                            hintText: 'نام مکان، منطقه یا دسته‌بندی...',
+                            prefixIcon: Icon(
+                              Icons.search_rounded,
+                              color: Color(0xFF276A5B),
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 15),
+
+                      // Categories
+                      SizedBox(
+                        height: 42,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: categories.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: 8),
+                          itemBuilder: (context, index) {
+                            final category = categories[index];
+                            final selected =
+                                category == selectedCategory;
+
+                            return ChoiceChip(
+                              label: Text(category),
+                              selected: selected,
+                              showCheckmark: false,
+                              selectedColor:
+                                  const Color(0xFF276A5B),
+                              backgroundColor: Colors.white,
+                              side: BorderSide(
+                                color: selected
+                                    ? const Color(0xFF276A5B)
+                                    : const Color(0xFFE4E4E4),
+                              ),
+                              labelStyle: TextStyle(
+                                color: selected
+                                    ? Colors.white
+                                    : const Color(0xFF444444),
+                                fontWeight: FontWeight.w700,
+                              ),
+                              onSelected: (_) {
+                                setState(() {
+                                  selectedCategory = category;
+                                });
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Expanded(
+                  child: filteredPlaces.isEmpty
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment:
+                                MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.search_off_rounded,
+                                size: 60,
+                                color: Color(0xFFAAAAAA),
+                              ),
+                              SizedBox(height: 12),
+                              Text(
+                                'پاتوقی پیدا نشد',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 17,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.separated(
+                          padding:
+                              const EdgeInsets.fromLTRB(18, 8, 18, 30),
+                          itemCount: filteredPlaces.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final place =
+                                filteredPlaces[index];
+
+                            return DiscoverPlaceCard(
+                              place: place,
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        PlaceDetailPage(
+                                      place: place,
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class DiscoverPlaceCard extends StatelessWidget {
+  final Place place;
+  final VoidCallback onTap;
+
+  const DiscoverPlaceCard({
+    super.key,
+    required this.place,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: const Color(0xFFEDEDED),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 86,
+                height: 86,
+                decoration: BoxDecoration(
+                  color: place.background,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Icon(
+                  place.icon,
+                  size: 43,
+                  color: place.foreground,
+                ),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      place.title,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${place.category} • ${place.area}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF777777),
+                      ),
+                    ),
+                    const SizedBox(height: 9),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 17,
+                          color: Color(0xFFFFB000),
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          place.rating,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(width: 15),
+                        const Icon(
+                          Icons.near_me_rounded,
+                          size: 15,
+                          color: Color(0xFF276A5B),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          place.distance,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF777777),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_left_rounded,
+                color: Color(0xFF999999),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class PlaceDetailPage extends StatefulWidget {
+  final Place place;
+
+  const PlaceDetailPage({
+    super.key,
+    required this.place,
+  });
+
+  @override
+  State<PlaceDetailPage> createState() =>
+      _PlaceDetailPageState();
+}
+
+class _PlaceDetailPageState
+    extends State<PlaceDetailPage> {
+  bool favorite = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final place = widget.place;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F8FA),
+      body: SafeArea(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            width: 700,
+            child: SingleChildScrollView(
+              padding:
+                  const EdgeInsets.fromLTRB(18, 12, 18, 30),
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        icon: const Icon(
+                          Icons.arrow_forward_rounded,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            favorite = !favorite;
+                          });
+                        },
+                        icon: Icon(
+                          favorite
+                              ? Icons.favorite_rounded
+                              : Icons.favorite_border_rounded,
+                          color: favorite
+                              ? Colors.red
+                              : const Color(0xFF333333),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  Container(
+                    height: 250,
+                    decoration: BoxDecoration(
+                      color: place.background,
+                      borderRadius:
+                          BorderRadius.circular(30),
+                    ),
+                    child: Icon(
+                      place.icon,
+                      size: 110,
+                      color: place.foreground,
+                    ),
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  Text(
+                    place.title,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on_rounded,
+                        size: 19,
+                        color: Color(0xFF276A5B),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(place.area),
+                      const SizedBox(width: 18),
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 19,
+                        color: Color(0xFFFFB000),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        place.rating,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  const Text(
+                    'درباره این پاتوق',
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Text(
+                    place.description,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      height: 1.9,
+                      color: Color(0xFF555555),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: PatoghInfoBox(
+                          icon: Icons.category_rounded,
+                          title: 'دسته‌بندی',
+                          value: place.category,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: PatoghInfoBox(
+                          icon: Icons.near_me_rounded,
+                          title: 'فاصله',
+                          value: place.distance,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  FilledButton.icon(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'مسیریابی را در مرحله بعد فعال می‌کنیم.',
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.directions_rounded,
+                    ),
+                    label: const Text(
+                      'مسیریابی',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                      ),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor:
+                          const Color(0xFF276A5B),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 17,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(17),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class PatoghInfoBox extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+
+  const PatoghInfoBox({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xFFEAEAEA),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: const Color(0xFF276A5B),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Color(0xFF888888),
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
