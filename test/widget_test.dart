@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:patogh/app.dart';
 
-import 'package:patogh/main.dart';
 void main() {
   testWidgets('Patogh home page loads', (WidgetTester tester) async {
     await tester.pumpWidget(const PatoghApp());
