@@ -1,9 +1,13 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patogh/app.dart';
 
 void main() {
-  testWidgets('Patogh home page loads', (WidgetTester tester) async {
+  testWidgets('Patogh reservation home renders', (tester) async {
     await tester.pumpWidget(const PatoghApp());
-    expect(find.text('امروز کجا بریم؟'), findsOneWidget);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MaterialApp), findsOneWidget);
+    expect(find.text('رزرو پاتوق'), findsOneWidget);
   });
 }
