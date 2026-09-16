@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:patogh/models/patogh_event.dart';
 import 'package:patogh/pages/payment_page.dart';
 import 'package:patogh/state/app_state.dart';
+import 'package:patogh/theme/patogh_theme.dart';
 
 class EventDetailPage extends StatefulWidget {
   final PatoghEvent event;
@@ -15,30 +16,14 @@ class EventDetailPage extends StatefulWidget {
 class _EventDetailPageState extends State<EventDetailPage> {
   int selectedTab = 0;
 
-  String _priceText(int value) {
-    final raw = value.toString();
-    final buffer = StringBuffer();
-    for (var i = 0; i < raw.length; i++) {
-      final reverseIndex = raw.length - i;
-      buffer.write(raw[i]);
-      if (reverseIndex > 1 && reverseIndex % 3 == 1) {
-        buffer.write(',');
-      }
-    }
-    return buffer.toString();
-  }
-
   @override
   Widget build(BuildContext context) {
     final event = widget.event;
+    final score = appState.matchScore(event.tags);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF101010),
       appBar: AppBar(
-        title: const Text(
-          'یادآوری پاتوق',
-          style: TextStyle(fontWeight: FontWeight.w900),
-        ),
+        title: const Text('جزئیات پاتوق'),
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_forward_rounded),
@@ -47,393 +32,203 @@ class _EventDetailPageState extends State<EventDetailPage> {
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
-          child: Column(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(22, 8, 22, 120),
             children: [
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(22, 8, 22, 120),
+              Container(
+                height: 240,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  gradient: LinearGradient(colors: event.gradient),
+                ),
+                child: Stack(
                   children: [
-                    _hero(event),
-                    const SizedBox(height: 16),
-                    _capacity(event),
-                    const SizedBox(height: 16),
-                    _infoCard(event),
-                    const SizedBox(height: 20),
-                    _tabs(),
-                    const SizedBox(height: 18),
-                    if (selectedTab == 0) _details(event) else _reviews(),
+                    Center(
+                      child: Icon(event.icon, size: 92, color: Colors.white),
+                    ),
+                    Positioned(
+                      right: 16,
+                      top: 16,
+                      child: Chip(label: Text('سازگاری $score٪')),
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-      bottomSheet: _bottomAction(event),
-    );
-  }
-
-  Widget _hero(PatoghEvent event) {
-    return Container(
-      height: 245,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          colors: event.gradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Stack(
-        children: [
-          Center(child: Icon(event.icon, color: Colors.white, size: 92)),
-          Positioned(
-            right: 18,
-            top: 18,
-            child: _TinyBadge(
-              icon: event.womenOnly
-                  ? Icons.female_rounded
-                  : Icons.groups_rounded,
-              text: event.womenOnly ? 'ویژه بانوان' : 'جمع کوچک',
-            ),
-          ),
-          Positioned(
-            left: 18,
-            bottom: 18,
-            child: Row(
-              children: List.generate(
-                event.participants.length.clamp(0, 4),
-                (index) => Transform.translate(
-                  offset: Offset(index * 7.0, 0),
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: Colors.white,
-                    child: CircleAvatar(
-                      radius: 16,
-                      backgroundColor: [
-                        const Color(0xFFB96E52),
-                        const Color(0xFF566E85),
-                        const Color(0xFF806273),
-                        const Color(0xFF6A7657),
-                      ][index],
-                      child: const Icon(
-                        Icons.person_rounded,
-                        size: 17,
-                        color: Colors.white,
-                      ),
-                    ),
+              const SizedBox(height: 16),
+              Container(
+                height: 62,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: event.isFull
+                      ? const Color(0xFFC7CAD0)
+                      : const Color(0xFF181818),
+                  borderRadius: BorderRadius.circular(28),
+                  border: event.isFull
+                      ? null
+                      : Border.all(color: PatoghTheme.blue),
+                ),
+                child: Text(
+                  event.isFull
+                      ? 'تکمیل ظرفیت'
+                      : '${event.seatsLeft} صندلی باقی مانده',
+                  style: TextStyle(
+                    color: event.isFull
+                        ? const Color(0xFF222222)
+                        : Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _capacity(PatoghEvent event) {
-    return Container(
-      height: 64,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: event.full ? const Color(0xFFC8CBD0) : const Color(0xFF1B1B1B),
-        borderRadius: BorderRadius.circular(28),
-        border: event.full ? null : Border.all(color: const Color(0xFF2B8CC0)),
-      ),
-      child: Text(
-        event.full ? 'تکمیل ظرفیت' : '${event.seatsLeft} صندلی باقی مانده',
-        style: TextStyle(
-          color: event.full ? const Color(0xFF222222) : Colors.white,
-          fontSize: 17,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-
-  Widget _infoCard(PatoghEvent event) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF141414),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF214A5F)),
-      ),
-      child: Column(
-        children: [
-          _InfoRow(
-            icon: Icons.location_on_outlined,
-            title: 'محل برگزاری',
-            value: 'محدوده برگزاری: ${event.area}\n${event.exactLocationNote}',
-          ),
-          const Divider(height: 28, color: Color(0xFF263B45)),
-          _InfoRow(
-            icon: Icons.calendar_month_rounded,
-            title: 'تاریخ پاتوق',
-            value: '${event.date}، ساعت ${event.time}',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _tabs() {
-    return Row(
-      children: [
-        Expanded(
-          child: _DetailTab(
-            title: 'جزئیات پاتوق',
-            selected: selectedTab == 0,
-            onTap: () => setState(() => selectedTab = 0),
-          ),
-        ),
-        Expanded(
-          child: _DetailTab(
-            title: 'نظر کاربران',
-            selected: selectedTab == 1,
-            onTap: () => setState(() => selectedTab = 1),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _details(PatoghEvent event) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Text(
-          'درباره این پاتوق:',
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          event.description,
-          style: const TextStyle(
-            color: Color(0xFFE2E2E2),
-            height: 1.9,
-            fontSize: 14,
-          ),
-        ),
-        const SizedBox(height: 18),
-        const Text(
-          'یادآوری مهم',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'هنگام مراجعه به محل، کد پاتوق خود را به میزبان اعلام کنید. گروه‌بندی‌ها به‌صورت سیستمی انجام می‌شود و بهتر است اعضا قبل از رویداد خارج از پاتوق با هم گروه جداگانه تشکیل ندهند.',
-          style: TextStyle(color: Color(0xFFDADADA), height: 1.8, fontSize: 13),
-        ),
-        const SizedBox(height: 22),
-        const Text(
-          'شرکت‌کننده‌های این پاتوق:',
-          style: TextStyle(fontWeight: FontWeight.w900),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: List.generate(
-            event.participants.length.clamp(0, 4),
-            (index) => Padding(
-              padding: const EdgeInsets.only(left: 6),
-              child: CircleAvatar(
-                radius: 22,
-                backgroundColor: const Color(0xFF2B8CC0),
-                child: CircleAvatar(
-                  radius: 20,
-                  backgroundColor: [
-                    const Color(0xFFB96E52),
-                    const Color(0xFF566E85),
-                    const Color(0xFF806273),
-                    const Color(0xFF6A7657),
-                  ][index],
-                  child: const Icon(Icons.person_rounded, color: Colors.white),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF141414),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: const Color(0xFF214A5F)),
+                ),
+                child: Column(
+                  children: [
+                    _row(
+                      Icons.location_on_outlined,
+                      'محل برگزاری',
+                      'محدوده: ${event.area}\n${event.exactLocationNote}',
+                    ),
+                    const Divider(height: 28, color: Color(0xFF263B45)),
+                    _row(
+                      Icons.calendar_month_rounded,
+                      'تاریخ پاتوق',
+                      '${event.date}، ساعت ${event.time}',
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _reviews() {
-    return const Column(
-      children: [
-        _ReviewCard(
-          title: 'تجربه خوب و جمع صمیمی',
-          body: 'تعداد کم افراد باعث شد گفت‌وگوها طبیعی‌تر و راحت‌تر پیش بره.',
-        ),
-        SizedBox(height: 10),
-        _ReviewCard(
-          title: 'برای آشنایی جدید مناسبه',
-          body: 'فضا رسمی نبود و شروع گفت‌وگو هم با چند سؤال ساده راحت شد.',
-        ),
-      ],
-    );
-  }
-
-  Widget _bottomAction(PatoghEvent event) {
-    return Center(
-      heightFactor: 1,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480),
-        child: AnimatedBuilder(
-          animation: appState,
-          builder: (context, _) {
-            final reserved = appState.reservedIds.contains(event.id);
-            final waitlisted = appState.waitlistIds.contains(event.id);
-
-            return Container(
-              height: 96,
-              padding: const EdgeInsets.fromLTRB(22, 14, 22, 14),
-              decoration: const BoxDecoration(
-                color: Color(0xFF151515),
-                border: Border(top: BorderSide(color: Color(0xFF252525))),
-              ),
-              child: Row(
+              const SizedBox(height: 20),
+              Row(
                 children: [
-                  Container(
-                    width: 112,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF111111),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF214A5F)),
-                    ),
-                    child: Text(
-                      '${_priceText(event.price)}\nتومان',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        height: 1.5,
-                      ),
+                  Expanded(
+                    child: _tab(
+                      'جزئیات پاتوق',
+                      selectedTab == 0,
+                      () => setState(() => selectedTab = 0),
                     ),
                   ),
-                  const SizedBox(width: 12),
                   Expanded(
-                    child: FilledButton(
-                      onPressed: reserved || waitlisted
-                          ? null
-                          : () async {
-                              if (event.full) {
-                                await appState.joinWaitlist(event.id);
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'به لیست انتظار اضافه شدی.',
-                                      ),
-                                    ),
-                                  );
-                                }
-                                return;
-                              }
-
-                              await Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => PaymentPage(event: event),
-                                ),
-                              );
-
-                              if (mounted) {
-                                setState(() {});
-                              }
-                            },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF8A2A),
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: const Color(0xFF6E5A49),
-                        minimumSize: const Size.fromHeight(58),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                      ),
-                      child: Text(
-                        reserved
-                            ? 'رزرو شده'
-                            : waitlisted
-                            ? 'در لیست انتظار'
-                            : event.full
-                            ? 'لیست انتظار'
-                            : 'رزرو پاتوق',
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
+                    child: _tab(
+                      'نظر کاربران',
+                      selectedTab == 1,
+                      () => setState(() => selectedTab = 1),
                     ),
                   ),
                 ],
               ),
-            );
-          },
+              const SizedBox(height: 18),
+              if (selectedTab == 0)
+                Text(
+                  event.description,
+                  style: const TextStyle(height: 1.9, color: Color(0xFFE1E1E1)),
+                )
+              else
+                const Text(
+                  '★★★★★\nتجربه خوب و جمع صمیمی بود.',
+                  style: TextStyle(height: 2),
+                ),
+            ],
+          ),
+        ),
+      ),
+      bottomSheet: Center(
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: AnimatedBuilder(
+            animation: appState,
+            builder: (context, _) {
+              final reserved = appState.reservedIds.contains(event.id);
+              final waitlisted = appState.waitlistIds.contains(event.id);
+
+              return Container(
+                height: 96,
+                padding: const EdgeInsets.fromLTRB(22, 14, 22, 14),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF151515),
+                  border: Border(top: BorderSide(color: Color(0xFF252525))),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 112,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF111111),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${event.finalPrice}\nتومان',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: reserved || waitlisted
+                            ? null
+                            : () async {
+                                if (event.isFull) {
+                                  await appState.joinWaitlist(event.id);
+                                  return;
+                                }
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => PaymentPage(event: event),
+                                  ),
+                                );
+                                if (mounted) setState(() {});
+                              },
+                        child: Text(
+                          reserved
+                              ? 'رزرو شده'
+                              : waitlisted
+                              ? 'در لیست انتظار'
+                              : event.isFull
+                              ? 'لیست انتظار'
+                              : 'رزرو پاتوق',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
   }
-}
 
-class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String value;
-
-  const _InfoRow({
-    required this.icon,
-    required this.title,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _row(IconData icon, String title, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 30, color: Colors.white),
+        Icon(icon, size: 30),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 15,
-                ),
-              ),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
               const SizedBox(height: 5),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Color(0xFFD8D8D8),
-                  height: 1.6,
-                  fontSize: 13,
-                ),
-              ),
+              Text(value, style: const TextStyle(height: 1.6)),
             ],
           ),
         ),
       ],
     );
   }
-}
 
-class _DetailTab extends StatelessWidget {
-  final String title;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _DetailTab({
-    required this.title,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _tab(String title, bool selected, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -441,9 +236,7 @@ class _DetailTab extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: selected
-                  ? const Color(0xFF2B8CC0)
-                  : const Color(0xFF444444),
+              color: selected ? PatoghTheme.blue : const Color(0xFF444444),
               width: selected ? 3 : 1,
             ),
           ),
@@ -456,71 +249,6 @@ class _DetailTab extends StatelessWidget {
             fontWeight: selected ? FontWeight.w900 : FontWeight.w500,
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _TinyBadge extends StatelessWidget {
-  final IconData icon;
-  final String text;
-
-  const _TinyBadge({required this.icon, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xCC000000),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white, size: 15),
-          const SizedBox(width: 5),
-          Text(
-            text,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ReviewCard extends StatelessWidget {
-  final String title;
-  final String body;
-
-  const _ReviewCard({required this.title, required this.body});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF171717),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
-          const SizedBox(height: 5),
-          Text(
-            body,
-            style: const TextStyle(
-              color: Color(0xFFCFCFCF),
-              height: 1.6,
-              fontSize: 12,
-            ),
-          ),
-        ],
       ),
     );
   }

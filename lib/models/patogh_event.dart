@@ -13,9 +13,11 @@ class PatoghEvent {
   final int capacity;
   final int reserved;
   final bool womenOnly;
-  final bool full;
+  final bool discounted;
+  final int discountPercent;
   final String description;
   final List<String> participants;
+  final List<String> tags;
   final List<Color> gradient;
   final IconData icon;
 
@@ -32,12 +34,17 @@ class PatoghEvent {
     required this.capacity,
     required this.reserved,
     required this.womenOnly,
-    required this.full,
+    required this.discounted,
+    required this.discountPercent,
     required this.description,
     required this.participants,
+    required this.tags,
     required this.gradient,
     required this.icon,
   });
 
   int get seatsLeft => capacity - reserved;
+  bool get isFull => seatsLeft <= 0;
+  int get finalPrice =>
+      discounted ? (price * (100 - discountPercent) ~/ 100) : price;
 }

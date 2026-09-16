@@ -1,68 +1,61 @@
 import 'package:flutter/material.dart';
+import 'package:patogh/state/app_state.dart';
+import 'package:patogh/theme/patogh_theme.dart';
 
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final items = const [
-      ('رزرو', 'ظرفیت «قرار صبحانه» رو به تکمیله.', Icons.event_seat_rounded),
-      ('یادآوری', 'پاتوق فردای شما ساعت ۱۹ شروع می‌شه.', Icons.alarm_rounded),
-      (
-        'پیشنهاد',
-        'یک پاتوق فکری جدید در مشهد اضافه شد.',
-        Icons.auto_awesome_rounded,
-      ),
-    ];
-
     return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(22),
-        children: [
-          const Text(
-            'اعلان‌ها',
-            style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 18),
-          ...items.map(
-            (item) => Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                color: const Color(0xFF171717),
-                borderRadius: BorderRadius.circular(20),
+      child: AnimatedBuilder(
+        animation: appState,
+        builder: (context, _) {
+          final items = <(String, String, IconData)>[
+            (
+              'پیشنهاد پاتوق',
+              'یک پاتوق جدید بر اساس علایق شما اضافه شد.',
+              Icons.auto_awesome_rounded,
+            ),
+            if (appState.reservedIds.isNotEmpty)
+              (
+                'رزرو تأیید شد',
+                'یکی از پاتوق‌های شما ثبت شده.',
+                Icons.event_available_rounded,
               ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: const Color(0xFF2B2B2B),
-                    child: Icon(item.$3, color: const Color(0xFFFF8A2A)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.$1,
-                          style: const TextStyle(fontWeight: FontWeight.w900),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.$2,
-                          style: const TextStyle(
-                            color: Color(0xFFC5C5C5),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
+            if (appState.waitlistIds.isNotEmpty)
+              (
+                'لیست انتظار',
+                'در صورت آزاد شدن ظرفیت اطلاع می‌دهیم.',
+                Icons.hourglass_bottom_rounded,
+              ),
+          ];
+
+          return ListView(
+            padding: const EdgeInsets.all(22),
+            children: [
+              const Text(
+                'اعلان‌ها',
+                style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 18),
+              ...items.map(
+                (item) => Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Material(
+                    color: const Color(0xFF171717),
+                    borderRadius: BorderRadius.circular(20),
+                    child: ListTile(
+                      leading: Icon(item.$3, color: PatoghTheme.orange),
+                      title: Text(item.$1),
+                      subtitle: Text(item.$2),
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

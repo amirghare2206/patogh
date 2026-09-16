@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:patogh/pages/archive_page.dart';
-import 'package:patogh/pages/badges_page.dart';
-import 'package:patogh/pages/calendar_page.dart';
-import 'package:patogh/pages/create_event_page.dart';
 import 'package:patogh/pages/host_dashboard_page.dart';
 import 'package:patogh/pages/privacy_page.dart';
 import 'package:patogh/state/app_state.dart';
+import 'package:patogh/theme/patogh_theme.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -16,6 +13,8 @@ class ProfilePage extends StatelessWidget {
       child: AnimatedBuilder(
         animation: appState,
         builder: (context, _) {
+          final profile = appState.profile;
+
           return ListView(
             padding: const EdgeInsets.all(22),
             children: [
@@ -23,7 +22,7 @@ class ProfilePage extends StatelessWidget {
                 'پروفایل',
                 style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 20),
               const Center(
                 child: CircleAvatar(
                   radius: 44,
@@ -35,49 +34,34 @@ class ProfilePage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              const Text(
-                'کاربر پاتوق',
+              const SizedBox(height: 10),
+              Text(
+                profile?.name ?? 'کاربر پاتوق',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'مشهد',
+              Text(
+                profile?.city ?? 'مشهد',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFFB0B0B0)),
+                style: const TextStyle(color: Color(0xFFAAAAAA)),
               ),
-              const SizedBox(height: 22),
-              Row(
-                children: [
-                  _stat('رزروها', '${appState.reservedIds.length}'),
-                  _stat('اعتماد', '۸۹٪'),
-                  _stat('افتخارها', '۳'),
-                ],
+              const SizedBox(height: 18),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 7,
+                runSpacing: 7,
+                children: (profile?.interests ?? const <String>[])
+                    .map((i) => Chip(label: Text(i)))
+                    .toList(),
               ),
-              const SizedBox(height: 22),
-              _tile(
-                context,
-                Icons.calendar_month_rounded,
-                'تقویم شخصی',
-                const CalendarPage(),
-              ),
-              _tile(
-                context,
-                Icons.history_rounded,
-                'آرشیو پاتوق‌ها',
-                const ArchivePage(),
-              ),
-              _tile(
-                context,
-                Icons.emoji_events_outlined,
-                'مدال‌ها و افتخارات',
-                const BadgesPage(),
-              ),
+              const SizedBox(height: 20),
               _tile(
                 context,
                 Icons.verified_user_outlined,
-                'حریم خصوصی و اعتماد',
+                'حریم خصوصی',
                 const PrivacyPage(),
               ),
               _tile(
@@ -86,45 +70,18 @@ class ProfilePage extends StatelessWidget {
                 'داشبورد میزبان',
                 const HostDashboardPage(),
               ),
-              _tile(
-                context,
-                Icons.add_circle_outline_rounded,
-                'ساخت پاتوق جدید',
-                const CreateEventPage(),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => appState.logout(),
+                icon: const Icon(Icons.logout_rounded),
+                label: const Text('خروج از حساب'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFFF9B9B),
+                ),
               ),
             ],
           );
         },
-      ),
-    );
-  }
-
-  Widget _stat(String label, String value) {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF171717),
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFFFF8A2A),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(color: Color(0xFFBFBFBF), fontSize: 10),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -139,15 +96,9 @@ class ProfilePage extends StatelessWidget {
           onTap: () {
             Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
           },
-          leading: Icon(icon, color: const Color(0xFFFF8A2A)),
-          title: Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.w800),
-          ),
-          trailing: const Icon(
-            Icons.chevron_left_rounded,
-            color: Color(0xFF888888),
-          ),
+          leading: Icon(icon, color: PatoghTheme.orange),
+          title: Text(title),
+          trailing: const Icon(Icons.chevron_left_rounded),
         ),
       ),
     );

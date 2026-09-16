@@ -15,7 +15,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
   @override
   void initState() {
     super.initState();
-    appState.reserve(widget.event.id);
+    appState.payAndReserve(widget.event.id);
   }
 
   @override
@@ -45,17 +45,10 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
                   style: TextStyle(fontSize: 23, fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  widget.event.title,
-                  style: const TextStyle(color: Color(0xFFBBBBBB)),
-                ),
+                Text(widget.event.title),
                 const SizedBox(height: 28),
                 FilledButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF8A2A),
-                    minimumSize: const Size.fromHeight(54),
-                  ),
                   child: const Text('بازگشت'),
                 ),
               ],

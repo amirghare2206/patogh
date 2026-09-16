@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:patogh/state/app_state.dart';
 
 class ChatRoomPage extends StatefulWidget {
+  final String roomId;
   final String title;
 
-  const ChatRoomPage({super.key, required this.title});
+  const ChatRoomPage({super.key, required this.roomId, required this.title});
 
   @override
   State<ChatRoomPage> createState() => _ChatRoomPageState();
@@ -11,11 +13,6 @@ class ChatRoomPage extends StatefulWidget {
 
 class _ChatRoomPageState extends State<ChatRoomPage> {
   final controller = TextEditingController();
-  final messages = <String>[
-    'سلام به همه، خوش اومدین 👋',
-    'محل نهایی فردا ظهر اعلام می‌شه.',
-    'عالیه، ممنون 🙌',
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -27,19 +24,21 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           icon: const Icon(Icons.arrow_forward_rounded),
         ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: Column(
+      body: AnimatedBuilder(
+        animation: appState,
+        builder: (context, _) {
+          final messages = appState.roomMessages(widget.roomId);
+
+          return Column(
             children: [
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(18),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
-                    final mine = index == messages.length - 1;
+                    final msg = messages[index];
                     return Align(
-                      alignment: mine
+                      alignment: msg.mine
                           ? Alignment.centerLeft
                           : Alignment.centerRight,
                       child: Container(
@@ -47,12 +46,25 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                         padding: const EdgeInsets.all(12),
                         constraints: const BoxConstraints(maxWidth: 300),
                         decoration: BoxDecoration(
-                          color: mine
+                          color: msg.mine
                               ? const Color(0xFF5A3B1D)
                               : const Color(0xFF1E1E1E),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Text(messages[index]),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(msg.text),
+                            const SizedBox(height: 4),
+                            Text(
+                              msg.time,
+                              style: const TextStyle(
+                                fontSize: 9,
+                                color: Color(0xFFAAAAAA),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -71,25 +83,20 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     ),
                     const SizedBox(width: 8),
                     IconButton.filled(
-                      onPressed: () {
+                      onPressed: () async {
                         final text = controller.text.trim();
                         if (text.isEmpty) return;
-                        setState(() {
-                          messages.add(text);
-                          controller.clear();
-                        });
+                        await appState.sendMessage(widget.roomId, text);
+                        controller.clear();
                       },
-                      style: IconButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF8A2A),
-                      ),
                       icon: const Icon(Icons.send_rounded),
                     ),
                   ],
                 ),
               ),
             ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }

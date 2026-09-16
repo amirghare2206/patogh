@@ -6,10 +6,10 @@ class ChatPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chats = const [
-      ('گروه قرار شام پاتوق', 'میزبان: خوش اومدین 👋', '۲'),
-      ('پشتیبانی پاتوق', 'رزرو شما ثبت شد.', ''),
-      ('پاتوق فکری مشهد', 'جلسه بعدی شنبه ساعت ۱۸', '۱'),
+    final rooms = const [
+      ('support', 'پشتیبانی پاتوق'),
+      ('dinner-01', 'گروه قرار شام پاتوق'),
+      ('think-01', 'پاتوق فکری مشهد'),
     ];
 
     return SafeArea(
@@ -21,8 +21,8 @@ class ChatPage extends StatelessWidget {
             style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 18),
-          ...chats.map(
-            (chat) => Container(
+          ...rooms.map(
+            (room) => Container(
               margin: const EdgeInsets.only(bottom: 12),
               child: Material(
                 color: const Color(0xFF171717),
@@ -31,38 +31,17 @@ class ChatPage extends StatelessWidget {
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => ChatRoomPage(title: chat.$1),
+                        builder: (_) =>
+                            ChatRoomPage(roomId: room.$1, title: room.$2),
                       ),
                     );
                   },
                   leading: const CircleAvatar(
                     backgroundColor: Color(0xFF2A2A2A),
-                    child: Icon(Icons.groups_rounded, color: Color(0xFFFF8A2A)),
+                    child: Icon(Icons.groups_rounded),
                   ),
-                  title: Text(
-                    chat.$1,
-                    style: const TextStyle(fontWeight: FontWeight.w900),
-                  ),
-                  subtitle: Text(
-                    chat.$2,
-                    style: const TextStyle(
-                      color: Color(0xFFBDBDBD),
-                      fontSize: 12,
-                    ),
-                  ),
-                  trailing: chat.$3.isEmpty
-                      ? null
-                      : CircleAvatar(
-                          radius: 12,
-                          backgroundColor: const Color(0xFFFF8A2A),
-                          child: Text(
-                            chat.$3,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
+                  title: Text(room.$2),
+                  trailing: const Icon(Icons.chevron_left_rounded),
                 ),
               ),
             ),
