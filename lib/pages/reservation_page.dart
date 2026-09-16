@@ -3,6 +3,8 @@ import 'package:patogh/data/mock_data.dart';
 import 'package:patogh/models/patogh_event.dart';
 import 'package:patogh/pages/category_events_page.dart';
 import 'package:patogh/pages/event_detail_page.dart';
+import 'package:patogh/pages/reservation_reminder_page.dart';
+import 'package:patogh/state/app_state.dart';
 import 'package:patogh/widgets/category_card.dart';
 import 'package:patogh/widgets/event_banner.dart';
 
@@ -30,66 +32,80 @@ class _ReservationPageState extends State<ReservationPage> {
     }).toList();
 
     return SafeArea(
-      child: Column(
-        children: [
-          Expanded(
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(child: _header()),
-                SliverToBoxAdapter(child: _search()),
-                SliverToBoxAdapter(child: _storyRow()),
-                SliverToBoxAdapter(child: _location()),
-                SliverToBoxAdapter(child: _hero()),
-                SliverToBoxAdapter(child: _tabs()),
-                if (selectedTab == 0)
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(22, 18, 22, 28),
-                    sliver: SliverGrid(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                            childAspectRatio: 0.83,
-                          ),
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final category = categories[index];
-                        return CategoryCard(
-                          category: category,
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    CategoryEventsPage(category: category),
-                              ),
-                            );
-                          },
-                        );
-                      }, childCount: categories.length),
+      child: AnimatedBuilder(
+        animation: appState,
+        builder: (context, _) => Column(
+          children: [
+            Expanded(
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(child: _header()),
+                  SliverToBoxAdapter(child: _search()),
+                  SliverToBoxAdapter(child: _storyRow()),
+                  SliverToBoxAdapter(child: _location()),
+                  SliverToBoxAdapter(child: _hero()),
+                  SliverToBoxAdapter(child: _tabs()),
+                  if (selectedTab == 0)
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(22, 18, 22, 28),
+                      sliver: SliverGrid(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              mainAxisSpacing: 12,
+                              crossAxisSpacing: 12,
+                              childAspectRatio: 0.83,
+                            ),
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final category = categories[index];
+                          return CategoryCard(
+                            category: category,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      CategoryEventsPage(category: category),
+                                ),
+                              );
+                            },
+                          );
+                        }, childCount: categories.length),
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(22, 18, 22, 28),
+                      sliver: SliverList.separated(
+                        itemCount: _eventsForSelectedTab(filteredEvents).length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 14),
+                        itemBuilder: (context, index) {
+                          final event = _eventsForSelectedTab(
+                            filteredEvents,
+                          )[index];
+                          return EventBanner(
+                            event: event,
+                            compact: true,
+                            onTap: () {
+                              if (selectedTab == 3) {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        ReservationReminderPage(event: event),
+                                  ),
+                                );
+                              } else {
+                                _openEvent(context, event);
+                              }
+                            },
+                          );
+                        },
+                      ),
                     ),
-                  )
-                else
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(22, 18, 22, 28),
-                    sliver: SliverList.separated(
-                      itemCount: _eventsForSelectedTab(filteredEvents).length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 14),
-                      itemBuilder: (context, index) {
-                        final event = _eventsForSelectedTab(
-                          filteredEvents,
-                        )[index];
-                        return EventBanner(
-                          event: event,
-                          compact: true,
-                          onTap: () => _openEvent(context, event),
-                        );
-                      },
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -99,7 +115,10 @@ class _ReservationPageState extends State<ReservationPage> {
       return source.where((event) => event.price <= 240000).toList();
     }
     if (selectedTab == 3) {
-      return source.take(2).toList();
+      return source.where((event) {
+        return appState.reservedIds.contains(event.id) ||
+            appState.waitlistIds.contains(event.id);
+      }).toList();
     }
     return source;
   }

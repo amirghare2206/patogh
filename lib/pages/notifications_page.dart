@@ -10,7 +10,7 @@ class NotificationsPage extends StatelessWidget {
       ('یادآوری', 'پاتوق فردای شما ساعت ۱۹ شروع می‌شه.', Icons.alarm_rounded),
       (
         'پیشنهاد',
-        'یک پاتوق هم‌فکر جدید در مشهد اضافه شد.',
+        'یک پاتوق فکری جدید در مشهد اضافه شد.',
         Icons.auto_awesome_rounded,
       ),
     ];

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:patogh/models/patogh_event.dart';
+import 'package:patogh/pages/payment_page.dart';
+import 'package:patogh/state/app_state.dart';
 
 class EventDetailPage extends StatefulWidget {
   final PatoghEvent event;
@@ -12,7 +14,6 @@ class EventDetailPage extends StatefulWidget {
 
 class _EventDetailPageState extends State<EventDetailPage> {
   int selectedTab = 0;
-  bool joined = false;
 
   String _priceText(int value) {
     final raw = value.toString();
@@ -222,7 +223,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
         ),
         const SizedBox(height: 8),
         const Text(
-          'هنگام مراجعه به محل، شماره رزرو پاتوق خود را به میزبان اعلام کنید. گروه‌بندی‌ها به‌صورت سیستمی انجام می‌شود و بهتر است اعضا قبل از رویداد خارج از پاتوق با هم گروه جداگانه تشکیل ندهند.',
+          'هنگام مراجعه به محل، کد پاتوق خود را به میزبان اعلام کنید. گروه‌بندی‌ها به‌صورت سیستمی انجام می‌شود و بهتر است اعضا قبل از رویداد خارج از پاتوق با هم گروه جداگانه تشکیل ندهند.',
           style: TextStyle(color: Color(0xFFDADADA), height: 1.8, fontSize: 13),
         ),
         const SizedBox(height: 22),
@@ -278,73 +279,96 @@ class _EventDetailPageState extends State<EventDetailPage> {
       heightFactor: 1,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 480),
-        child: Container(
-          height: 96,
-          padding: const EdgeInsets.fromLTRB(22, 14, 22, 14),
-          decoration: const BoxDecoration(
-            color: Color(0xFF151515),
-            border: Border(top: BorderSide(color: Color(0xFF252525))),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 112,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF111111),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF214A5F)),
-                ),
-                child: Text(
-                  '${_priceText(event.price)}\nتومان',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    height: 1.5,
-                  ),
-                ),
+        child: AnimatedBuilder(
+          animation: appState,
+          builder: (context, _) {
+            final reserved = appState.reservedIds.contains(event.id);
+            final waitlisted = appState.waitlistIds.contains(event.id);
+
+            return Container(
+              height: 96,
+              padding: const EdgeInsets.fromLTRB(22, 14, 22, 14),
+              decoration: const BoxDecoration(
+                color: Color(0xFF151515),
+                border: Border(top: BorderSide(color: Color(0xFF252525))),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  onPressed: joined
-                      ? null
-                      : () {
-                          setState(() => joined = true);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                event.full
-                                    ? 'به لیست انتظار اضافه شدی.'
-                                    : 'رزرو اولیه ثبت شد.',
-                              ),
-                            ),
-                          );
-                        },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF8A2A),
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: const Color(0xFF6E5A49),
-                    minimumSize: const Size.fromHeight(58),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+              child: Row(
+                children: [
+                  Container(
+                    width: 112,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF111111),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF214A5F)),
+                    ),
+                    child: Text(
+                      '${_priceText(event.price)}\nتومان',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        height: 1.5,
+                      ),
                     ),
                   ),
-                  child: Text(
-                    joined
-                        ? 'ثبت شد'
-                        : event.full
-                        ? 'لیست انتظار'
-                        : 'رزرو پاتوق',
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: reserved || waitlisted
+                          ? null
+                          : () async {
+                              if (event.full) {
+                                await appState.joinWaitlist(event.id);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'به لیست انتظار اضافه شدی.',
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return;
+                              }
+
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => PaymentPage(event: event),
+                                ),
+                              );
+
+                              if (mounted) {
+                                setState(() {});
+                              }
+                            },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF8A2A),
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: const Color(0xFF6E5A49),
+                        minimumSize: const Size.fromHeight(58),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
+                      child: Text(
+                        reserved
+                            ? 'رزرو شده'
+                            : waitlisted
+                            ? 'در لیست انتظار'
+                            : event.full
+                            ? 'لیست انتظار'
+                            : 'رزرو پاتوق',
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:patogh/app.dart';
+import 'package:patogh/state/app_state.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await appState.init();
   runApp(const PatoghApp());
 }
