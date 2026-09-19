@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:patogh/pages/archive_page.dart';
+import 'package:patogh/pages/badges_page.dart';
+import 'package:patogh/pages/calendar_page.dart';
+import 'package:patogh/pages/edit_profile_page.dart';
 import 'package:patogh/pages/host_dashboard_page.dart';
 import 'package:patogh/pages/privacy_page.dart';
 import 'package:patogh/state/app_state.dart';
@@ -54,10 +58,34 @@ class ProfilePage extends StatelessWidget {
                 spacing: 7,
                 runSpacing: 7,
                 children: (profile?.interests ?? const <String>[])
-                    .map((i) => Chip(label: Text(i)))
+                    .map((interest) => Chip(label: Text(interest)))
                     .toList(),
               ),
               const SizedBox(height: 20),
+              _tile(
+                context,
+                Icons.edit_rounded,
+                'ویرایش پروفایل',
+                const EditProfilePage(),
+              ),
+              _tile(
+                context,
+                Icons.calendar_month_rounded,
+                'تقویم شخصی',
+                const CalendarPage(),
+              ),
+              _tile(
+                context,
+                Icons.history_rounded,
+                'آرشیو پاتوق‌ها',
+                const ArchivePage(),
+              ),
+              _tile(
+                context,
+                Icons.emoji_events_outlined,
+                'مدال‌ها و افتخارات',
+                const BadgesPage(),
+              ),
               _tile(
                 context,
                 Icons.verified_user_outlined,
@@ -97,7 +125,10 @@ class ProfilePage extends StatelessWidget {
             Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
           },
           leading: Icon(icon, color: PatoghTheme.orange),
-          title: Text(title),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
           trailing: const Icon(Icons.chevron_left_rounded),
         ),
       ),

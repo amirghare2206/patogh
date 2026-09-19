@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:patogh/pages/create_event_page.dart';
+import 'package:patogh/pages/group_quality_page.dart';
 import 'package:patogh/pages/matching_page.dart';
 import 'package:patogh/theme/patogh_theme.dart';
 
@@ -12,6 +14,7 @@ class HostDashboardPage extends StatelessWidget {
       ('لیست انتظار', '۸', Icons.hourglass_bottom_rounded),
       ('وضعیت پرداخت‌ها', '۱۷/۲۰', Icons.payments_rounded),
       ('پیام‌های جدید', '۱۲', Icons.chat_rounded),
+      ('هشدارهای سیستم', '۲', Icons.warning_amber_rounded),
     ];
 
     return Scaffold(
@@ -22,47 +25,79 @@ class HostDashboardPage extends StatelessWidget {
           icon: const Icon(Icons.arrow_forward_rounded),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(22),
-        children: [
-          Row(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: ListView(
+            padding: const EdgeInsets.all(22),
             children: [
-              _metric('ظرفیت', '۱۸ / ۲۰'),
-              _metric('اعتماد گروه', '۹۱٪'),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ...cards.map(
-            (card) => Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              child: Material(
-                color: const Color(0xFF181818),
-                borderRadius: BorderRadius.circular(18),
-                child: ListTile(
-                  leading: Icon(card.$3, color: PatoghTheme.orange),
-                  title: Text(card.$1),
-                  trailing: Text(
-                    card.$2,
-                    style: const TextStyle(
-                      color: PatoghTheme.orange,
-                      fontWeight: FontWeight.w900,
+              Row(
+                children: [
+                  _metric('ظرفیت', '۱۸ / ۲۰'),
+                  _metric('زمان باقی‌مانده', '۲ روز'),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  _metric('اعتماد گروه', '۹۱٪'),
+                  _metric('وضعیت', 'آماده اجرا'),
+                ],
+              ),
+              const SizedBox(height: 18),
+              ...cards.map(
+                (card) => Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  child: Material(
+                    color: const Color(0xFF181818),
+                    borderRadius: BorderRadius.circular(18),
+                    child: ListTile(
+                      leading: Icon(card.$3, color: PatoghTheme.orange),
+                      title: Text(card.$1),
+                      trailing: Text(
+                        card.$2,
+                        style: const TextStyle(
+                          color: PatoghTheme.orange,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+              const SizedBox(height: 8),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const GroupQualityPage()),
+                  );
+                },
+                icon: const Icon(Icons.insights_rounded),
+                label: const Text('تحلیل کیفیت گروه'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const MatchingPage()),
+                  );
+                },
+                icon: const Icon(Icons.auto_awesome_rounded),
+                label: const Text('پیشنهاد هوشمند اعضا'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const CreateEventPage()),
+                  );
+                },
+                icon: const Icon(Icons.add_circle_outline_rounded),
+                label: const Text('ساخت پاتوق جدید'),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          FilledButton.icon(
-            onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const MatchingPage()));
-            },
-            icon: const Icon(Icons.auto_awesome_rounded),
-            label: const Text('Matching پیشنهادی اعضا'),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -80,7 +115,7 @@ class HostDashboardPage extends StatelessWidget {
           children: [
             Text(
               value,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 4),
             Text(

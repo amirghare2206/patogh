@@ -226,7 +226,6 @@ class _ReservationPageState extends State<ReservationPage> {
   Widget _reservationItem(PatoghEvent event) {
     if (selectedTab == 3) {
       final reserved = appState.reservedIds.contains(event.id);
-
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
