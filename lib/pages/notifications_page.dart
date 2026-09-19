@@ -17,6 +17,14 @@ class NotificationsPage extends StatelessWidget {
               'یک پاتوق جدید بر اساس علایق شما اضافه شد.',
               Icons.auto_awesome_rounded,
             ),
+            if (appState.circleMembers.any(
+              (item) => item.accepted && item.notifyOnEventJoin,
+            ))
+              (
+                'حلقه من',
+                'یکی از اعضای حلقه‌ات اجازه داده هنگام رزرو رویدادهای منتخب به تو خبر بدهیم.',
+                Icons.diversity_1_rounded,
+              ),
             if (appState.reservedIds.isNotEmpty)
               (
                 'رزرو تأیید شد',

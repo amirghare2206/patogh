@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:patogh/models/patogh_event.dart';
 import 'package:patogh/pages/category_events_page.dart';
 import 'package:patogh/pages/event_detail_page.dart';
+import 'package:patogh/pages/event_request_page.dart';
 import 'package:patogh/pages/reservation_reminder_page.dart';
 import 'package:patogh/state/app_state.dart';
 import 'package:patogh/theme/patogh_theme.dart';
@@ -18,6 +19,7 @@ class ReservationPage extends StatefulWidget {
 class _ReservationPageState extends State<ReservationPage> {
   int selectedTab = 0;
   String query = '';
+  String scopeFilter = 'همه';
 
   final tabs = const ['دسته‌بندی', 'جدیدترین', 'تخفیف‌ها', 'رزرو من'];
 
@@ -32,7 +34,10 @@ class _ReservationPageState extends State<ReservationPage> {
               SliverToBoxAdapter(child: _header()),
               SliverToBoxAdapter(child: _search()),
               SliverToBoxAdapter(child: _location()),
+              SliverToBoxAdapter(child: _scopeFilters()),
+              SliverToBoxAdapter(child: _campaignBanner()),
               SliverToBoxAdapter(child: _hero()),
+              SliverToBoxAdapter(child: _eventRequestShortcut()),
               SliverToBoxAdapter(child: _tabs()),
               if (selectedTab == 0) _categories() else _eventList(),
             ],
@@ -98,6 +103,91 @@ class _ReservationPageState extends State<ReservationPage> {
             style: const TextStyle(color: PatoghTheme.blue, fontSize: 13),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _scopeFilters() {
+    const scopes = ['همه', 'محلی', 'شهری', 'منطقه‌ای', 'کشوری'];
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 22),
+        scrollDirection: Axis.horizontal,
+        itemCount: scopes.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 7),
+        itemBuilder: (context, index) {
+          final scope = scopes[index];
+          return ChoiceChip(
+            label: Text(scope),
+            selected: scopeFilter == scope,
+            onSelected: (_) => setState(() => scopeFilter = scope),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _campaignBanner() {
+    final banner = appState.banners.first;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(22, 0, 22, 14),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF4A2B16), Color(0xFF1A1A1A)],
+          ),
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Row(
+          children: [
+            const CircleAvatar(
+              backgroundColor: PatoghTheme.orange,
+              child: Icon(Icons.campaign_rounded),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    banner.title,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    banner.subtitle,
+                    style: const TextStyle(
+                      color: Color(0xFFCCCCCC),
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (banner.sponsored)
+              const Text(
+                'اسپانسرشده',
+                style: TextStyle(color: PatoghTheme.orange, fontSize: 8),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _eventRequestShortcut() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
+      child: OutlinedButton.icon(
+        onPressed: () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const EventRequestPage()));
+        },
+        icon: const Icon(Icons.add_task_rounded),
+        label: const Text('رویداد مدنظرت نیست؟ درخواست بده'),
       ),
     );
   }
@@ -287,6 +377,16 @@ class _ReservationPageState extends State<ReservationPage> {
           event.subtitle.contains(q) ||
           event.area.contains(q);
     }).toList();
+
+    if (scopeFilter != 'همه') {
+      list = list
+          .where(
+            (event) =>
+                appState.policyForEvent(event.id).geographicLevel ==
+                scopeFilter,
+          )
+          .toList();
+    }
 
     if (selectedTab == 2) {
       list = list.where((event) => event.discounted).toList();

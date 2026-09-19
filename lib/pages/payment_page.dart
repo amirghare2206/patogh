@@ -7,8 +7,15 @@ import 'package:url_launcher/url_launcher.dart';
 
 class PaymentPage extends StatefulWidget {
   final PatoghEvent event;
+  final int? checkoutTotal;
+  final String? checkoutNote;
 
-  const PaymentPage({super.key, required this.event});
+  const PaymentPage({
+    super.key,
+    required this.event,
+    this.checkoutTotal,
+    this.checkoutNote,
+  });
 
   @override
   State<PaymentPage> createState() => _PaymentPageState();
@@ -45,7 +52,12 @@ class _PaymentPageState extends State<PaymentPage> {
                   children: [
                     _line('پاتوق', event.title),
                     _line('تاریخ', event.date),
-                    _line('مبلغ', '${event.finalPrice} تومان'),
+                    _line(
+                      'مبلغ',
+                      '${widget.checkoutTotal ?? event.finalPrice} تومان',
+                    ),
+                    if (widget.checkoutNote != null)
+                      _line('جزئیات', widget.checkoutNote!),
                   ],
                 ),
               ),
@@ -73,7 +85,10 @@ class _PaymentPageState extends State<PaymentPage> {
     setState(() => loading = true);
 
     try {
-      final result = await PlatformServices.createPayment(event: widget.event);
+      final result = await PlatformServices.createPayment(
+        event: widget.event,
+        amount: widget.checkoutTotal,
+      );
 
       if (!mounted) return;
 

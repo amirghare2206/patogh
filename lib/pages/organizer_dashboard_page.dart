@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:patogh/pages/create_event_page.dart';
+import 'package:patogh/pages/sponsorship_page.dart';
+import 'package:patogh/pages/reputation_page.dart';
+import 'package:patogh/pages/enterprise_page.dart';
+import 'package:patogh/pages/campaigns_page.dart';
 import 'package:patogh/theme/patogh_theme.dart';
 
 class OrganizerDashboardPage extends StatelessWidget {
@@ -80,6 +84,32 @@ class OrganizerDashboardPage extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           const Text(
+            'ابزارهای برگزارکننده',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 10),
+          _Tool(
+            title: 'اعتبار و بازخورد آژانس',
+            icon: Icons.verified_rounded,
+            page: const ReputationPage(reputationId: 'org-novin'),
+          ),
+          _Tool(
+            title: 'جشنواره و کد تخفیف',
+            icon: Icons.discount_rounded,
+            page: const CampaignsPage(),
+          ),
+          _Tool(
+            title: 'بازار سازمانی B2B / B2E',
+            icon: Icons.apartment_rounded,
+            page: const EnterprisePage(),
+          ),
+          _Tool(
+            title: 'اسپانسرینگ رویداد',
+            icon: Icons.volunteer_activism_rounded,
+            page: const SponsorshipPage(),
+          ),
+          const SizedBox(height: 18),
+          const Text(
             'وضعیت رویدادها',
             style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
           ),
@@ -95,6 +125,36 @@ class OrganizerDashboardPage extends StatelessWidget {
             color: Color(0xFF7BE0A8),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _Tool extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Widget page;
+
+  const _Tool({required this.title, required this.icon, required this.page});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: const Color(0xFF181818),
+        borderRadius: BorderRadius.circular(16),
+        child: ListTile(
+          onTap: () =>
+              Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => page)),
+          leading: Icon(icon, color: PatoghTheme.orange),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          trailing: const Icon(Icons.chevron_left_rounded),
+        ),
       ),
     );
   }

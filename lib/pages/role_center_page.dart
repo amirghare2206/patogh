@@ -18,83 +18,125 @@ class RoleCenterPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('نقش و سطح دسترسی'),
+        title: const Text('نقش‌های من'),
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_forward_rounded),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(18),
-        children: [
-          const Text(
-            'نقش فعلی',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            appState.role.label,
-            style: const TextStyle(
-              color: PatoghTheme.orange,
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 18),
-          const Text(
-            'در نسخه واقعی، نقش‌های کسب‌وکار میزبان، هماهنگ‌کننده و برگزارکننده بعد از بررسی ادمین فعال می‌شوند. برای تست Demo می‌توانی نقش را فوراً تغییر بدهی.',
-            style: TextStyle(
-              color: Color(0xFFAAAAAA),
-              height: 1.7,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 18),
-          ...roles.map(
-            (role) => Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
+      body: AnimatedBuilder(
+        animation: appState,
+        builder: (context, _) => ListView(
+          padding: const EdgeInsets.all(18),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFF181818),
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(20),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: Text(
-                      role.label,
-                      style: const TextStyle(fontWeight: FontWeight.w900),
+                  const Text(
+                    'حالت فعال',
+                    style: TextStyle(color: Color(0xFFAAAAAA)),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    appState.role.label,
+                    style: const TextStyle(
+                      color: PatoghTheme.orange,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
-                  if (role == UserRole.participant)
-                    FilledButton(
-                      onPressed: () => appState.setDemoRole(role),
-                      child: const Text('فعال کن'),
-                    )
-                  else if (role == UserRole.admin)
-                    OutlinedButton(
-                      onPressed: () => appState.setDemoRole(role),
-                      child: const Text('فقط دمو'),
-                    )
-                  else
-                    Row(
-                      children: [
-                        TextButton(
-                          onPressed: () => _requestRole(context, role),
-                          child: const Text('درخواست'),
-                        ),
-                        const SizedBox(width: 6),
-                        OutlinedButton(
-                          onPressed: () => appState.setDemoRole(role),
-                          child: const Text('دمو'),
-                        ),
-                      ],
+                  const SizedBox(height: 7),
+                  const Text(
+                    'یک نفر می‌تواند همزمان شرکت‌کننده، میزبان، هماهنگ‌کننده و برگزارکننده باشد. فقط بین پنل‌های فعال جابه‌جا می‌شوی.',
+                    style: TextStyle(
+                      color: Color(0xFFBBBBBB),
+                      fontSize: 11,
+                      height: 1.7,
                     ),
+                  ),
                 ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            ...roles.map((role) {
+              final enabled = appState.enabledRoles.contains(role);
+              final active = appState.role == role;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: active
+                      ? const Color(0xFF2A2119)
+                      : const Color(0xFF181818),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      active
+                          ? Icons.radio_button_checked_rounded
+                          : Icons.badge_outlined,
+                      color: active ? PatoghTheme.orange : Colors.white,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            role.label,
+                            style: const TextStyle(fontWeight: FontWeight.w900),
+                          ),
+                          Text(
+                            enabled
+                                ? 'فعال برای این حساب'
+                                : (role == UserRole.admin
+                                      ? 'فقط با دسترسی مدیریتی'
+                                      : 'نیازمند درخواست و تأیید'),
+                            style: const TextStyle(
+                              color: Color(0xFF999999),
+                              fontSize: 9,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (enabled && !active)
+                      FilledButton(
+                        onPressed: () => appState.switchRole(role),
+                        child: const Text('ورود به نقش'),
+                      )
+                    else if (!enabled && role != UserRole.admin)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextButton(
+                            onPressed: () => _requestRole(context, role),
+                            child: const Text('درخواست'),
+                          ),
+                          OutlinedButton(
+                            onPressed: () => appState.setDemoRole(role),
+                            child: const Text('دمو'),
+                          ),
+                        ],
+                      )
+                    else if (!enabled && role == UserRole.admin)
+                      OutlinedButton(
+                        onPressed: () => appState.setDemoRole(role),
+                        child: const Text('ادمین Demo'),
+                      ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
@@ -109,7 +151,7 @@ class RoleCenterPage extends StatelessWidget {
           controller: controller,
           maxLines: 4,
           decoration: const InputDecoration(
-            hintText: 'درباره تجربه یا کسب‌وکار خودت توضیح بده...',
+            hintText: 'درباره تجربه، کسب‌وکار یا سابقه هماهنگی توضیح بده...',
           ),
         ),
         actions: [

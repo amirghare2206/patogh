@@ -4,6 +4,14 @@ import 'package:patogh/pages/admin/admin_events_page.dart';
 import 'package:patogh/pages/admin/admin_finance_page.dart';
 import 'package:patogh/pages/admin/admin_moderation_page.dart';
 import 'package:patogh/pages/admin/admin_users_page.dart';
+import 'package:patogh/pages/venue_types_page.dart';
+import 'package:patogh/pages/sponsorship_page.dart';
+import 'package:patogh/pages/feedback_center_page.dart';
+import 'package:patogh/pages/event_request_page.dart';
+import 'package:patogh/pages/enterprise_page.dart';
+import 'package:patogh/pages/admin/admin_banner_campaign_page.dart';
+import 'package:patogh/pages/admin/admin_private_event_pricing_page.dart';
+import 'package:patogh/pages/admin/admin_golrizon_page.dart';
 import 'package:patogh/state/app_state.dart';
 import 'package:patogh/theme/patogh_theme.dart';
 
@@ -107,6 +115,46 @@ class AdminDashboardPage extends StatelessWidget {
             title: 'گزارش تخلف و نظارت',
             icon: Icons.gavel_rounded,
             page: const AdminModerationPage(),
+          ),
+          _Link(
+            title: 'کیفیت، اعتبار و بازخورد',
+            icon: Icons.verified_rounded,
+            page: const FeedbackCenterPage(),
+          ),
+          _Link(
+            title: 'درخواست‌های رویداد کاربران',
+            icon: Icons.add_task_rounded,
+            page: const EventRequestPage(),
+          ),
+          _Link(
+            title: 'بنرها، جشنواره‌ها و کمپین‌ها',
+            icon: Icons.view_carousel_rounded,
+            page: const AdminBannerCampaignPage(),
+          ),
+          _Link(
+            title: 'تعرفه انتشار دعوت‌نامه‌ها',
+            icon: Icons.price_change_rounded,
+            page: const AdminPrivateEventPricingPage(),
+          ),
+          _Link(
+            title: 'تأیید و مدیریت گل‌ریزون',
+            icon: Icons.volunteer_activism_rounded,
+            page: const AdminGolrizonPage(),
+          ),
+          _Link(
+            title: 'اسپانسرینگ و دعوت ظرفیت‌محور',
+            icon: Icons.volunteer_activism_rounded,
+            page: const SponsorshipPage(),
+          ),
+          _Link(
+            title: 'مشتریان و مزایای سازمانی',
+            icon: Icons.apartment_rounded,
+            page: const EnterprisePage(),
+          ),
+          _Link(
+            title: 'انواع میزبان و فضاها',
+            icon: Icons.storefront_rounded,
+            page: const VenueTypesPage(),
           ),
           const SizedBox(height: 18),
           const _Alert(

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:patogh/models/ecosystem_models.dart';
 import 'package:patogh/models/patogh_event.dart';
-import 'package:patogh/pages/payment_page.dart';
+import 'package:patogh/pages/booking_builder_page.dart';
+import 'package:patogh/pages/reputation_page.dart';
+import 'package:patogh/pages/event_memories_page.dart';
 import 'package:patogh/state/app_state.dart';
 import 'package:patogh/theme/patogh_theme.dart';
 
@@ -20,6 +23,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
   Widget build(BuildContext context) {
     final event = widget.event;
     final score = appState.matchScore(event.tags);
+    final policy = appState.policyForEvent(event.id);
 
     return Scaffold(
       appBar: AppBar(
@@ -33,7 +37,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(22, 8, 22, 120),
+            padding: const EdgeInsets.fromLTRB(22, 8, 22, 130),
             children: [
               Container(
                 height: 240,
@@ -51,10 +55,45 @@ class _EventDetailPageState extends State<EventDetailPage> {
                       top: 16,
                       child: Chip(label: Text('سازگاری $score٪')),
                     ),
+                    if (policy.sponsored)
+                      const Positioned(
+                        left: 16,
+                        top: 16,
+                        child: Chip(
+                          avatar: Icon(
+                            Icons.volunteer_activism_rounded,
+                            size: 16,
+                          ),
+                          label: Text('اسپانسرشده'),
+                        ),
+                      ),
+                    Positioned(
+                      left: 16,
+                      bottom: 16,
+                      child: Chip(
+                        avatar: const Icon(
+                          Icons.local_fire_department_rounded,
+                          size: 16,
+                        ),
+                        label: Text(
+                          'محبوبیت ${appState.popularityForEvent(event.id)}٪',
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
+              Text(
+                event.title,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _audienceChips(policy),
+              const SizedBox(height: 14),
               Container(
                 height: 62,
                 alignment: Alignment.center,
@@ -104,36 +143,93 @@ class _EventDetailPageState extends State<EventDetailPage> {
                   ],
                 ),
               ),
+              if (policy.sponsored) ...[
+                const SizedBox(height: 14),
+                _sponsorCard(policy),
+              ],
+              const SizedBox(height: 16),
+              _trustCard(context),
+              const SizedBox(height: 12),
+              Material(
+                color: const Color(0xFF181818),
+                borderRadius: BorderRadius.circular(20),
+                child: ListTile(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => EventMemoriesPage(
+                        eventId: event.id,
+                        eventTitle: event.title,
+                      ),
+                    ),
+                  ),
+                  leading: const Icon(
+                    Icons.photo_album_rounded,
+                    color: PatoghTheme.orange,
+                  ),
+                  title: const Text(
+                    'خاطرات و آلبوم این رویداد',
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  subtitle: const Text(
+                    'عکس، ویدئو، خاطره و یادگاری با دسترسی انتخابی',
+                    style: TextStyle(color: Color(0xFF999999), fontSize: 10),
+                  ),
+                  trailing: const Icon(Icons.chevron_left_rounded),
+                ),
+              ),
               const SizedBox(height: 20),
               Row(
                 children: [
                   Expanded(
                     child: _tab(
-                      'جزئیات پاتوق',
+                      'جزئیات',
                       selectedTab == 0,
                       () => setState(() => selectedTab = 0),
                     ),
                   ),
                   Expanded(
                     child: _tab(
-                      'نظر کاربران',
+                      'بازخورد',
                       selectedTab == 1,
                       () => setState(() => selectedTab = 1),
+                    ),
+                  ),
+                  Expanded(
+                    child: _tab(
+                      'گفت‌وگو',
+                      selectedTab == 2,
+                      () => setState(() => selectedTab = 2),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 18),
               if (selectedTab == 0)
-                Text(
-                  event.description,
-                  style: const TextStyle(height: 1.9, color: Color(0xFFE1E1E1)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      event.description,
+                      style: const TextStyle(
+                        height: 1.9,
+                        color: Color(0xFFE1E1E1),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'در مرحله رزرو می‌توانی رزرو فردی/گروهی، فرزند تحت سرپرستی، منوی میزبان و کد تخفیف را تنظیم کنی.',
+                      style: TextStyle(
+                        color: Color(0xFFAAAAAA),
+                        fontSize: 11,
+                        height: 1.7,
+                      ),
+                    ),
+                  ],
                 )
+              else if (selectedTab == 1)
+                _reviews()
               else
-                const Text(
-                  '★★★★★\nتجربه خوب و جمع صمیمی بود.',
-                  style: TextStyle(height: 2),
-                ),
+                _discussion(),
             ],
           ),
         ),
@@ -149,7 +245,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
               final waitlisted = appState.waitlistIds.contains(event.id);
 
               return Container(
-                height: 96,
+                height: 100,
                 padding: const EdgeInsets.fromLTRB(22, 14, 22, 14),
                 decoration: const BoxDecoration(
                   color: Color(0xFF151515),
@@ -165,7 +261,9 @@ class _EventDetailPageState extends State<EventDetailPage> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        '${event.finalPrice}\nتومان',
+                        policy.sponsored && event.finalPrice == 0
+                            ? 'با حمایت\nاسپانسر'
+                            : '${event.finalPrice}\nتومان',
                         textAlign: TextAlign.center,
                         style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
@@ -182,7 +280,8 @@ class _EventDetailPageState extends State<EventDetailPage> {
                                 }
                                 await Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (_) => PaymentPage(event: event),
+                                    builder: (_) =>
+                                        BookingBuilderPage(event: event),
                                   ),
                                 );
                                 if (mounted) setState(() {});
@@ -194,7 +293,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
                               ? 'در لیست انتظار'
                               : event.isFull
                               ? 'لیست انتظار'
-                              : 'رزرو پاتوق',
+                              : 'تنظیم و رزرو پاتوق',
                         ),
                       ),
                     ),
@@ -205,6 +304,245 @@ class _EventDetailPageState extends State<EventDetailPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _audienceChips(EventAudiencePolicy policy) {
+    return Wrap(
+      spacing: 7,
+      runSpacing: 7,
+      children: [
+        Chip(label: Text(policy.geographicLevel)),
+        Chip(label: Text(policy.geographicLabel)),
+        Chip(label: Text('${policy.minAge}–${policy.maxAge} سال')),
+        Chip(label: Text(policy.genderPolicy)),
+      ],
+    );
+  }
+
+  Widget _sponsorCard(EventAudiencePolicy policy) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: const Color(0xFF173026),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF285A46)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.volunteer_activism_rounded,
+            color: PatoghTheme.green,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'این رویداد با حمایت ${policy.sponsorName} برگزار می‌شود. شرایط حضور و جریمه No-show قبل از رزرو نمایش داده می‌شود.',
+              style: const TextStyle(
+                color: Color(0xFFBFE8D2),
+                fontSize: 11,
+                height: 1.6,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _trustCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: const Color(0xFF181818),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'اعتبار عوامل این رویداد',
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const ReputationPage(reputationId: 'venue-roshan'),
+                    ),
+                  ),
+                  icon: const Icon(Icons.storefront_rounded),
+                  label: const Text('میزبان 4.8'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const ReputationPage(reputationId: 'org-novin'),
+                    ),
+                  ),
+                  icon: const Icon(Icons.campaign_rounded),
+                  label: const Text('آژانس 4.6'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'امتیازها از تجربه حضور تأییدشده ساخته می‌شوند و کنار ادعاهای پروفایل نمایش داده می‌شوند.',
+            style: TextStyle(
+              color: Color(0xFF888888),
+              fontSize: 9,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _discussion() {
+    final comments = appState.eventComments
+        .where((item) => item.eventId == widget.event.id)
+        .toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        OutlinedButton.icon(
+          onPressed: _addComment,
+          icon: const Icon(Icons.add_comment_rounded),
+          label: const Text('سؤال یا نظر درباره این رویداد'),
+        ),
+        const SizedBox(height: 10),
+        if (comments.isEmpty)
+          const Text(
+            'هنوز گفت‌وگویی شروع نشده.',
+            style: TextStyle(color: Color(0xFF999999)),
+          )
+        else
+          ...comments.map(
+            (item) => Container(
+              margin: const EdgeInsets.only(bottom: 9),
+              padding: const EdgeInsets.all(13),
+              decoration: BoxDecoration(
+                color: const Color(0xFF181818),
+                borderRadius: BorderRadius.circular(17),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    item.author,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(item.text, style: const TextStyle(height: 1.6)),
+                  const SizedBox(height: 5),
+                  Text(
+                    item.createdAt,
+                    style: const TextStyle(
+                      color: Color(0xFF888888),
+                      fontSize: 9,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _addComment() async {
+    final controller = TextEditingController();
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('نظر یا سؤال'),
+        content: TextField(
+          controller: controller,
+          maxLines: 4,
+          decoration: const InputDecoration(hintText: 'درباره رویداد بنویس...'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('انصراف'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final text = controller.text.trim();
+              if (text.isEmpty) return;
+              await appState.addEventComment(widget.event.id, text);
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
+              if (mounted) setState(() {});
+            },
+            child: const Text('ارسال'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+  }
+
+  Widget _reviews() {
+    final reviews = appState.feedbackEntries
+        .where(
+          (item) =>
+              item.eventId == widget.event.id || item.targetType == 'رویداد',
+        )
+        .toList();
+    if (reviews.isEmpty) {
+      return const Text(
+        'هنوز نظر تأییدشده‌ای برای این رویداد ثبت نشده.',
+        style: TextStyle(color: Color(0xFFAAAAAA)),
+      );
+    }
+    return Column(
+      children: reviews.map((item) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 9),
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            color: const Color(0xFF181818),
+            borderRadius: BorderRadius.circular(17),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.verified_rounded,
+                    color: PatoghTheme.green,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 5),
+                  const Expanded(
+                    child: Text(
+                      'حضور تأییدشده',
+                      style: TextStyle(color: PatoghTheme.green, fontSize: 10),
+                    ),
+                  ),
+                  Text(
+                    '${item.score}/5',
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 7),
+              Text(item.comment, style: const TextStyle(height: 1.6)),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 

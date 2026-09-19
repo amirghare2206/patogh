@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:patogh/models/user_role.dart';
 import 'package:patogh/state/app_state.dart';
 import 'package:patogh/theme/patogh_theme.dart';
 
@@ -13,7 +14,7 @@ class TimelinePage extends StatelessWidget {
         builder: (context, _) {
           final canPost =
               appState.reservedIds.isNotEmpty ||
-              appState.role.name != 'participant';
+              appState.role != UserRole.participant;
           return ListView(
             padding: const EdgeInsets.all(18),
             children: [
@@ -41,6 +42,8 @@ class TimelinePage extends StatelessWidget {
                 'تجربه آدم‌ها از پاتوق‌هایی که در آن‌ها حضور داشته‌اند',
                 style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 12),
               ),
+              const SizedBox(height: 12),
+              _promoBanner(),
               const SizedBox(height: 18),
               ...appState.timelinePosts.map(
                 (post) => Container(
@@ -117,6 +120,47 @@ class TimelinePage extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _promoBanner() {
+    final items = appState.banners
+        .where((item) => item.placement == 'timeline')
+        .toList();
+    if (items.isEmpty) return const SizedBox.shrink();
+    final banner = items.first;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF26384A), Color(0xFF181818)],
+        ),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.campaign_rounded, color: PatoghTheme.orange),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  banner.title,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                Text(
+                  banner.subtitle,
+                  style: const TextStyle(
+                    color: Color(0xFFBBBBBB),
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

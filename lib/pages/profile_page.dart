@@ -3,9 +3,20 @@ import 'package:patogh/pages/archive_page.dart';
 import 'package:patogh/pages/badges_page.dart';
 import 'package:patogh/pages/calendar_page.dart';
 import 'package:patogh/pages/edit_profile_page.dart';
+import 'package:patogh/pages/feedback_center_page.dart';
+import 'package:patogh/pages/ecosystem_hub_page.dart';
+import 'package:patogh/pages/dependents_page.dart';
 import 'package:patogh/pages/host_dashboard_page.dart';
+import 'package:patogh/pages/chat_page.dart';
+import 'package:patogh/pages/notifications_page.dart';
+import 'package:patogh/pages/game_page.dart';
 import 'package:patogh/pages/privacy_page.dart';
 import 'package:patogh/pages/role_center_page.dart';
+import 'package:patogh/pages/social_links_page.dart';
+import 'package:patogh/pages/my_circle_page.dart';
+import 'package:patogh/pages/iran_location_picker_page.dart';
+import 'package:patogh/pages/social_discovery_page.dart';
+import 'package:patogh/pages/memories_library_page.dart';
 import 'package:patogh/state/app_state.dart';
 import 'package:patogh/theme/patogh_theme.dart';
 
@@ -71,6 +82,40 @@ class ProfilePage extends StatelessWidget {
               ),
               _tile(
                 context,
+                Icons.switch_account_rounded,
+                'نقش‌های من و تغییر پنل',
+                const RoleCenterPage(),
+              ),
+              _tile(
+                context,
+                Icons.link_rounded,
+                'شبکه‌های اجتماعی و دسترسی',
+                const SocialLinksPage(),
+              ),
+              _tile(
+                context,
+                Icons.location_city_rounded,
+                'استان و شهر فعالیت',
+                IranLocationPickerPage(
+                  initialProvince: appState.selectedProvince,
+                  initialCity: appState.selectedCity,
+                  title: 'استان و شهر فعالیت',
+                ),
+              ),
+              _tile(
+                context,
+                Icons.diversity_1_rounded,
+                'حلقه من؛ دوستان و خانواده',
+                const MyCirclePage(),
+              ),
+              _tile(
+                context,
+                Icons.people_alt_rounded,
+                'تعامل هوشمند و هم‌پاتوقی‌ها',
+                const SocialDiscoveryPage(),
+              ),
+              _tile(
+                context,
                 Icons.calendar_month_rounded,
                 'تقویم شخصی',
                 const CalendarPage(),
@@ -83,15 +128,51 @@ class ProfilePage extends StatelessWidget {
               ),
               _tile(
                 context,
+                Icons.photo_album_rounded,
+                'خاطرات و سالگردها',
+                const MemoriesLibraryPage(),
+              ),
+              _tile(
+                context,
                 Icons.emoji_events_outlined,
                 'مدال‌ها و افتخارات',
                 const BadgesPage(),
               ),
               _tile(
                 context,
-                Icons.manage_accounts_rounded,
-                'نقش و سطح دسترسی',
-                const RoleCenterPage(),
+                Icons.hub_rounded,
+                'اکوسیستم کامل پاتوق',
+                const EcosystemHubPage(),
+              ),
+              _tile(
+                context,
+                Icons.sports_esports_rounded,
+                'بازی‌های پاتوق',
+                const GamePage(),
+              ),
+              _tile(
+                context,
+                Icons.notifications_active_rounded,
+                'اعلان‌ها',
+                const NotificationsPage(),
+              ),
+              _tile(
+                context,
+                Icons.chat_bubble_rounded,
+                'پیام‌ها و پشتیبانی',
+                const ChatPage(),
+              ),
+              _tile(
+                context,
+                Icons.verified_rounded,
+                'اعتبار، حضور و بازخورد',
+                const FeedbackCenterPage(),
+              ),
+              _tile(
+                context,
+                Icons.family_restroom_rounded,
+                'فرزندان و افراد تحت سرپرستی',
+                const DependentsPage(),
               ),
               _tile(
                 context,

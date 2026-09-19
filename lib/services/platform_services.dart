@@ -316,6 +316,7 @@ class PlatformServices {
 
   static Future<PaymentStartResult> createPayment({
     required PatoghEvent event,
+    int? amount,
   }) async {
     if (!AppConfig.usePaymentApi) {
       return const PaymentStartResult(demo: true);
@@ -331,7 +332,7 @@ class PlatformServices {
       },
       body: jsonEncode({
         'event_id': event.id,
-        'amount': event.finalPrice,
+        'amount': amount ?? event.finalPrice,
         'callback_url': Uri.base
             .replace(
               queryParameters: {'payment': 'callback', 'event_id': event.id},
