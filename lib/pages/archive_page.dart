@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:patogh/data/mock_data.dart';
 import 'package:patogh/pages/event_detail_page.dart';
 import 'package:patogh/state/app_state.dart';
 import 'package:patogh/widgets/event_card.dart';
@@ -25,13 +24,13 @@ class _ArchivePageState extends State<ArchivePage> {
   Widget build(BuildContext context) {
     final list = switch (selected) {
       0 =>
-        events
+        appState.events
             .where((event) => appState.reservedIds.contains(event.id))
             .toList(),
-      1 => events.take(1).toList(),
-      2 => events.skip(1).take(1).toList(),
+      1 => appState.events.take(1).toList(),
+      2 => appState.events.skip(1).take(1).toList(),
       _ =>
-        events
+        appState.events
             .where((event) => appState.favoriteIds.contains(event.id))
             .toList(),
     };

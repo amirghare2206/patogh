@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:patogh/models/patogh_event.dart';
+import 'package:patogh/state/app_state.dart';
 
 class CreateEventPage extends StatefulWidget {
   const CreateEventPage({super.key});
@@ -94,14 +96,45 @@ class _CreateEventPageState extends State<CreateEventPage> {
               ),
               const SizedBox(height: 22),
               FilledButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'پیش‌نویس پاتوق ذخیره شد. اتصال ثبت واقعی به بک‌اند در مرحله Production انجام می‌شود.',
-                      ),
-                    ),
+                onPressed: () async {
+                  final title = titleController.text.trim();
+                  if (title.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('عنوان پاتوق را وارد کن.')),
+                    );
+                    return;
+                  }
+
+                  final now = DateTime.now();
+                  final event = PatoghEvent(
+                    id: 'host-${now.microsecondsSinceEpoch}',
+                    categoryId: 'intro',
+                    title: title,
+                    subtitle: category,
+                    date: 'تاریخ توسط میزبان تعیین می‌شود',
+                    time: 'ساعت تعیین نشده',
+                    area: 'مشهد',
+                    exactLocationNote: 'آدرس نهایی بعداً ثبت می‌شود.',
+                    price: int.tryParse(priceController.text) ?? 0,
+                    capacity: int.tryParse(capacityController.text) ?? 8,
+                    reserved: 0,
+                    womenOnly: false,
+                    discounted: false,
+                    discountPercent: 0,
+                    description: 'پاتوق ساخته‌شده توسط میزبان.',
+                    participants: const [],
+                    tags: const ['میزبان'],
+                    gradient: const [Color(0xFF295B6A), Color(0xFF13242A)],
+                    icon: Icons.groups_rounded,
                   );
+
+                  await appState.createEvent(event);
+
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('پاتوق ثبت شد.')),
+                  );
+                  Navigator.of(context).pop();
                 },
                 icon: const Icon(Icons.save_rounded),
                 label: const Text('ذخیره پیش‌نویس'),

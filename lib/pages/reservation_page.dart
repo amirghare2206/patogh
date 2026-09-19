@@ -1,5 +1,5 @@
+import 'package:patogh/data/mock_data.dart' show categories;
 import 'package:flutter/material.dart';
-import 'package:patogh/data/mock_data.dart';
 import 'package:patogh/models/patogh_event.dart';
 import 'package:patogh/pages/category_events_page.dart';
 import 'package:patogh/pages/event_detail_page.dart';
@@ -104,7 +104,9 @@ class _ReservationPageState extends State<ReservationPage> {
   }
 
   Widget _hero() {
-    final featured = events[1];
+    final featured = appState.events.length > 1
+        ? appState.events[1]
+        : appState.events.first;
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 0, 22, 18),
       child: EventCard(event: featured, onTap: () => _openEvent(featured)),
@@ -271,7 +273,7 @@ class _ReservationPageState extends State<ReservationPage> {
   }
 
   List<PatoghEvent> _filteredEvents() {
-    var list = events.where((event) {
+    var list = appState.events.where((event) {
       final q = query.trim();
       if (q.isEmpty) return true;
       return event.title.contains(q) ||

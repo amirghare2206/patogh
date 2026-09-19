@@ -15,6 +15,19 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   final controller = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    appState.startChatRoom(widget.roomId);
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    appState.stopChatRoom();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -86,7 +99,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                       onPressed: () async {
                         final text = controller.text.trim();
                         if (text.isEmpty) return;
+
                         await appState.sendMessage(widget.roomId, text);
+
                         controller.clear();
                       },
                       icon: const Icon(Icons.send_rounded),

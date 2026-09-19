@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:patogh/data/mock_data.dart';
 import 'package:patogh/state/app_state.dart';
 import 'package:patogh/theme/patogh_theme.dart';
 
@@ -8,7 +7,7 @@ class CalendarPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reserved = events
+    final reserved = appState.events
         .where((event) => appState.reservedIds.contains(event.id))
         .toList();
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:patogh/data/mock_data.dart';
 import 'package:patogh/models/patogh_category.dart';
 import 'package:patogh/pages/event_detail_page.dart';
 import 'package:patogh/widgets/event_card.dart';
+import 'package:patogh/state/app_state.dart';
 
 class CategoryEventsPage extends StatelessWidget {
   final PatoghCategory category;
@@ -11,7 +11,9 @@ class CategoryEventsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final categoryEvents = eventsForCategory(category.id);
+    final categoryEvents = appState.events
+        .where((event) => event.categoryId == category.id)
+        .toList();
 
     return Scaffold(
       appBar: AppBar(

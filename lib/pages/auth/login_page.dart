@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:patogh/pages/auth/otp_page.dart';
+import 'package:patogh/state/app_state.dart';
 import 'package:patogh/theme/patogh_theme.dart';
 
 class LoginPage extends StatefulWidget {
@@ -53,7 +54,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 14),
                 FilledButton(
-                  onPressed: () {
+                  onPressed: () async {
                     final phone = phoneController.text.trim();
                     if (phone.length < 10) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -63,9 +64,20 @@ class _LoginPageState extends State<LoginPage> {
                       );
                       return;
                     }
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => OtpPage(phone: phone)),
-                    );
+                    try {
+                      await appState.requestOtp(phone);
+                      if (!context.mounted) return;
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => OtpPage(phone: phone),
+                        ),
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('ارسال کد ناموفق بود: $e')),
+                      );
+                    }
                   },
                   child: const Text(
                     'دریافت کد ورود',
@@ -74,7 +86,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'نسخه آزمایشی: کد ورود 1234 است.',
+                  'در حالت Demo کد ورود 1234 است؛ در Production پیامک واقعی ارسال می‌شود.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Color(0xFF888888), fontSize: 11),
                 ),

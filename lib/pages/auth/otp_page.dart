@@ -54,7 +54,7 @@ class _OtpPageState extends State<OtpPage> {
                       : () async {
                           setState(() => loading = true);
                           try {
-                            await appState.verifyDemoOtp(
+                            await appState.verifyOtp(
                               widget.phone,
                               codeController.text.trim(),
                             );

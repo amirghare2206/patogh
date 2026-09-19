@@ -1,14 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:patogh/config/app_config.dart';
 import 'package:patogh/models/patogh_event.dart';
 import 'package:patogh/pages/payment_success_page.dart';
+import 'package:patogh/services/platform_services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class PaymentPage extends StatelessWidget {
+class PaymentPage extends StatefulWidget {
   final PatoghEvent event;
 
   const PaymentPage({super.key, required this.event});
 
   @override
+  State<PaymentPage> createState() => _PaymentPageState();
+}
+
+class _PaymentPageState extends State<PaymentPage> {
+  bool loading = false;
+
+  @override
   Widget build(BuildContext context) {
+    final event = widget.event;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('پرداخت و رزرو'),
@@ -38,27 +50,64 @@ class PaymentPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 18),
-              const Text(
-                'پرداخت در این نسخه شبیه‌سازی می‌شود. اتصال به درگاه واقعی در مرحله اتصال سرویس انجام می‌شود.',
-                style: TextStyle(color: Color(0xFFBBBBBB), height: 1.7),
+              Text(
+                AppConfig.usePaymentApi
+                    ? 'با ادامه، درگاه پرداخت امن باز می‌شود.'
+                    : 'حالت Demo فعال است؛ پرداخت به‌صورت آزمایشی ثبت می‌شود.',
+                style: const TextStyle(color: Color(0xFFBBBBBB), height: 1.7),
               ),
               const SizedBox(height: 22),
               FilledButton.icon(
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => PaymentSuccessPage(event: event),
-                    ),
-                  );
-                },
+                onPressed: loading ? null : _startPayment,
                 icon: const Icon(Icons.lock_rounded),
-                label: const Text('پرداخت و ثبت رزرو'),
+                label: Text(loading ? 'در حال اتصال...' : 'پرداخت و ثبت رزرو'),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _startPayment() async {
+    setState(() => loading = true);
+
+    try {
+      final result = await PlatformServices.createPayment(event: widget.event);
+
+      if (!mounted) return;
+
+      if (result.demo) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => PaymentSuccessPage(event: widget.event),
+          ),
+        );
+        return;
+      }
+
+      final url = result.url;
+      if (url == null || url.isEmpty) {
+        throw Exception('آدرس درگاه از سرور دریافت نشد.');
+      }
+
+      final opened = await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+        webOnlyWindowName: '_self',
+      );
+
+      if (!opened && mounted) {
+        throw Exception('باز کردن درگاه ممکن نشد.');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+      }
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
   }
 
   Widget _line(String title, String value) {
