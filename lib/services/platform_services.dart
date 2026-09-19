@@ -9,6 +9,7 @@ import 'package:patogh/config/app_config.dart';
 import 'package:patogh/models/chat_message.dart';
 import 'package:patogh/models/patogh_event.dart';
 import 'package:patogh/models/user_profile.dart';
+import 'package:patogh/models/user_role.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PaymentStartResult {
@@ -101,6 +102,7 @@ class PlatformServices {
       ),
       showAge: (row['show_age'] as bool?) ?? true,
       allowChat: (row['allow_chat'] as bool?) ?? true,
+      role: UserRoleX.fromKey(row['role'] as String?),
     );
   }
 
@@ -117,6 +119,7 @@ class PlatformServices {
       'interests': profile.interests,
       'show_age': profile.showAge,
       'allow_chat': profile.allowChat,
+      'role': profile.role.key,
     });
   }
 
@@ -347,5 +350,156 @@ class PlatformServices {
       url: body['payment_url'] as String?,
       reference: body['reference'] as String?,
     );
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchCategoriesV6() async {
+    if (!AppConfig.useSupabase) return const [];
+    final rows = await _supabase!
+        .from('categories')
+        .select()
+        .order('sort_order');
+    return (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+  }
+
+  static Future<void> saveCategoryV6(Map<String, dynamic> category) async {
+    if (!AppConfig.useSupabase) return;
+    await _supabase!.from('categories').upsert(category);
+  }
+
+  static Future<void> toggleCategoryV6(String id, bool active) async {
+    if (!AppConfig.useSupabase) return;
+    await _supabase!
+        .from('categories')
+        .update({'is_active': active})
+        .eq('id', id);
+  }
+
+  static Future<void> requestRoleV6(String role, String note) async {
+    final userId = currentUserId;
+    if (!AppConfig.useSupabase || userId == null) return;
+    await _supabase!.from('role_requests').insert({
+      'user_id': userId,
+      'requested_role': role,
+      'note': note,
+    });
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchRoleRequestsV6() async {
+    if (!AppConfig.useSupabase) return const [];
+    final rows = await _supabase!
+        .from('role_requests')
+        .select()
+        .order('created_at', ascending: false);
+    return (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+  }
+
+  static Future<void> reviewRoleRequestV6(String id, bool approve) async {
+    if (!AppConfig.useSupabase) return;
+    await _supabase!.rpc(
+      'approve_role_request',
+      params: {'p_request_id': id, 'p_approve': approve},
+    );
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchTimelineV6() async {
+    if (!AppConfig.useSupabase) return const [];
+    final rows = await _supabase!
+        .from('timeline_posts')
+        .select()
+        .order('created_at', ascending: false)
+        .limit(100);
+    return (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+  }
+
+  static Future<void> addTimelinePostV6({
+    required String text,
+    required String authorName,
+    required String roleLabel,
+    required String eventTitle,
+    String? eventId,
+  }) async {
+    final userId = currentUserId;
+    if (!AppConfig.useSupabase || userId == null) return;
+    await _supabase!.from('timeline_posts').insert({
+      'user_id': userId,
+      'event_id': eventId,
+      'text': text,
+      'author_name': authorName,
+      'role_label': roleLabel,
+      'event_title': eventTitle,
+    });
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchStoriesV6() async {
+    if (!AppConfig.useSupabase) return const [];
+    final rows = await _supabase!
+        .from('stories')
+        .select()
+        .gt('expires_at', DateTime.now().toIso8601String())
+        .order('created_at', ascending: false);
+    return (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+  }
+
+  static Future<void> addStoryV6({
+    required String title,
+    required String subtitle,
+    required String ownerName,
+    required String ownerRole,
+  }) async {
+    final userId = currentUserId;
+    if (!AppConfig.useSupabase || userId == null) return;
+    await _supabase!.from('stories').insert({
+      'user_id': userId,
+      'title': title,
+      'subtitle': subtitle,
+      'owner_name': ownerName,
+      'owner_role': ownerRole,
+    });
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchCommunitiesV6() async {
+    if (!AppConfig.useSupabase) return const [];
+    final rows = await _supabase!
+        .from('communities')
+        .select()
+        .order('created_at', ascending: false);
+    return (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+  }
+
+  static Future<void> createCommunityV6({
+    required String title,
+    required String description,
+    required String type,
+    required String ownerName,
+  }) async {
+    final userId = currentUserId;
+    if (!AppConfig.useSupabase || userId == null) return;
+    final row = await _supabase!
+        .from('communities')
+        .insert({
+          'owner_id': userId,
+          'title': title,
+          'description': description,
+          'community_type': type,
+          'owner_name': ownerName,
+          'member_count': 1,
+        })
+        .select('id')
+        .single();
+    await _supabase!.from('community_members').insert({
+      'community_id': row['id'],
+      'user_id': userId,
+      'member_role': 'owner',
+    });
   }
 }

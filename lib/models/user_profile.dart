@@ -1,3 +1,5 @@
+import 'package:patogh/models/user_role.dart';
+
 class UserProfile {
   final String name;
   final int age;
@@ -5,6 +7,7 @@ class UserProfile {
   final List<String> interests;
   final bool showAge;
   final bool allowChat;
+  final UserRole role;
 
   const UserProfile({
     required this.name,
@@ -13,6 +16,7 @@ class UserProfile {
     required this.interests,
     required this.showAge,
     required this.allowChat,
+    this.role = UserRole.participant,
   });
 
   UserProfile copyWith({
@@ -22,6 +26,7 @@ class UserProfile {
     List<String>? interests,
     bool? showAge,
     bool? allowChat,
+    UserRole? role,
   }) {
     return UserProfile(
       name: name ?? this.name,
@@ -30,6 +35,7 @@ class UserProfile {
       interests: interests ?? this.interests,
       showAge: showAge ?? this.showAge,
       allowChat: allowChat ?? this.allowChat,
+      role: role ?? this.role,
     );
   }
 
@@ -40,6 +46,7 @@ class UserProfile {
     'interests': interests,
     'showAge': showAge,
     'allowChat': allowChat,
+    'role': role.key,
   };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -52,6 +59,7 @@ class UserProfile {
       ),
       showAge: (json['showAge'] as bool?) ?? true,
       allowChat: (json['allowChat'] as bool?) ?? true,
+      role: UserRoleX.fromKey(json['role'] as String?),
     );
   }
 }

@@ -1,4 +1,3 @@
-import 'package:patogh/data/mock_data.dart' show categories;
 import 'package:flutter/material.dart';
 import 'package:patogh/models/patogh_event.dart';
 import 'package:patogh/pages/category_events_page.dart';
@@ -179,19 +178,27 @@ class _ReservationPageState extends State<ReservationPage> {
           crossAxisSpacing: 12,
           childAspectRatio: 0.82,
         ),
-        delegate: SliverChildBuilderDelegate((context, index) {
-          final category = categories[index];
-          return CategoryCard(
-            category: category,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => CategoryEventsPage(category: category),
-                ),
-              );
-            },
-          );
-        }, childCount: categories.length),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final activeCategories = appState.categories
+                .where((category) => category.isActive)
+                .toList();
+            final category = activeCategories[index];
+            return CategoryCard(
+              category: category,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => CategoryEventsPage(category: category),
+                  ),
+                );
+              },
+            );
+          },
+          childCount: appState.categories
+              .where((category) => category.isActive)
+              .length,
+        ),
       ),
     );
   }

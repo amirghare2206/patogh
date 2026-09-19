@@ -5,6 +5,7 @@ import 'package:patogh/pages/calendar_page.dart';
 import 'package:patogh/pages/edit_profile_page.dart';
 import 'package:patogh/pages/host_dashboard_page.dart';
 import 'package:patogh/pages/privacy_page.dart';
+import 'package:patogh/pages/role_center_page.dart';
 import 'package:patogh/state/app_state.dart';
 import 'package:patogh/theme/patogh_theme.dart';
 
@@ -85,6 +86,12 @@ class ProfilePage extends StatelessWidget {
                 Icons.emoji_events_outlined,
                 'مدال‌ها و افتخارات',
                 const BadgesPage(),
+              ),
+              _tile(
+                context,
+                Icons.manage_accounts_rounded,
+                'نقش و سطح دسترسی',
+                const RoleCenterPage(),
               ),
               _tile(
                 context,
