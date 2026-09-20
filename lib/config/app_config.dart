@@ -5,14 +5,11 @@ class AppConfig {
     'PATOGH_MODE',
     defaultValue: 'demo',
   );
-
   static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
   static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
-
   static const paymentApiBaseUrl = String.fromEnvironment(
     'PAYMENT_API_BASE_URL',
   );
-
   static const firebaseApiKey = String.fromEnvironment('FIREBASE_API_KEY');
   static const firebaseAppId = String.fromEnvironment('FIREBASE_APP_ID');
   static const firebaseMessagingSenderId = String.fromEnvironment(
@@ -29,16 +26,17 @@ class AppConfig {
   );
   static const fcmVapidKey = String.fromEnvironment('FCM_VAPID_KEY');
 
+  static bool get isDemo => mode == 'demo';
+  static bool get isStaging => mode == 'staging';
+  static bool get isProduction => mode == 'production';
   static bool get useSupabase =>
-      mode == 'production' &&
+      (isStaging || isProduction) &&
       supabaseUrl.isNotEmpty &&
       supabaseAnonKey.isNotEmpty;
-
-  static bool get usePaymentApi =>
-      mode == 'production' && paymentApiBaseUrl.isNotEmpty;
-
+  static bool get useStagingAnonymousAuth => isStaging && useSupabase;
+  static bool get usePaymentApi => isProduction && paymentApiBaseUrl.isNotEmpty;
   static bool get useFirebase =>
-      mode == 'production' &&
+      (isStaging || isProduction) &&
       firebaseApiKey.isNotEmpty &&
       firebaseAppId.isNotEmpty &&
       firebaseMessagingSenderId.isNotEmpty &&

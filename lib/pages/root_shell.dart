@@ -3,6 +3,7 @@ import 'package:patogh/models/user_role.dart';
 import 'package:patogh/pages/admin/admin_approvals_page.dart';
 import 'package:patogh/pages/admin/admin_dashboard_page.dart';
 import 'package:patogh/pages/admin/admin_reports_page.dart';
+import 'package:patogh/pages/admin/engagement_admin_page.dart';
 import 'package:patogh/pages/admin/category_management_page.dart';
 import 'package:patogh/pages/communities_page.dart';
 import 'package:patogh/pages/home_page.dart';
@@ -166,6 +167,7 @@ class _RootShellState extends State<RootShell> {
             AdminApprovalsPage(),
             CategoryManagementPage(),
             TimeEngineAdminPage(),
+            EngagementAdminPage(),
             AdminReportsPage(),
             ProfilePage(),
           ],
@@ -174,6 +176,7 @@ class _RootShellState extends State<RootShell> {
             _NavItem(Icons.fact_check_rounded, 'تأییدها'),
             _NavItem(Icons.category_rounded, 'دسته‌ها'),
             _NavItem(Icons.calendar_month_rounded, 'تقویم'),
+            _NavItem(Icons.explore_rounded, 'تعامل'),
             _NavItem(Icons.insights_rounded, 'گزارشات'),
             _NavItem(Icons.person_rounded, 'پروفایل'),
           ],

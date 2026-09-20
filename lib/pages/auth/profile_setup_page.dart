@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:patogh/data/iran_locations.dart';
 import 'package:patogh/models/user_profile.dart';
 import 'package:patogh/models/user_role.dart';
+import 'package:patogh/pages/legal_page.dart';
 import 'package:patogh/state/app_state.dart';
 
 class ProfileSetupPage extends StatefulWidget {
@@ -19,6 +20,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
 
   final selectedRoles = <UserRole>{UserRole.participant};
   final selected = <String>{};
+  bool acceptedTerms = false;
 
   final allInterests = const [
     'کافه',
@@ -156,26 +158,69 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () async {
-                  final name = nameController.text.trim();
-                  final age = int.tryParse(ageController.text.trim()) ?? 25;
-                  await appState.saveProfile(
-                    UserProfile(
-                      name: name.isEmpty ? 'کاربر پاتوق' : name,
-                      age: age,
-                      city: city,
-                      interests: selected.toList(),
-                      showAge: true,
-                      allowChat: true,
+              const SizedBox(height: 18),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: acceptedTerms,
+                onChanged: (value) =>
+                    setState(() => acceptedTerms = value ?? false),
+                title: const Text(
+                  'شرایط استفاده، سیاست حریم خصوصی و قواعد جامعه پاتوق را می‌پذیرم.',
+                  style: TextStyle(fontSize: 11),
+                ),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+              Wrap(
+                spacing: 6,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const LegalPage(
+                          title: 'شرایط استفاده',
+                          body: LegalPage.terms,
+                        ),
+                      ),
                     ),
-                  );
-                  await appState.configureInitialRoles(selectedRoles);
-                  await appState.setSelectedLocation(province, city);
-                  if (!context.mounted) return;
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                },
+                    child: const Text('شرایط استفاده'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const LegalPage(
+                          title: 'سیاست حریم خصوصی',
+                          body: LegalPage.privacy,
+                        ),
+                      ),
+                    ),
+                    child: const Text('حریم خصوصی'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: acceptedTerms
+                    ? () async {
+                        final name = nameController.text.trim();
+                        final age =
+                            int.tryParse(ageController.text.trim()) ?? 25;
+                        await appState.saveProfile(
+                          UserProfile(
+                            name: name.isEmpty ? 'کاربر پاتوق' : name,
+                            age: age,
+                            city: city,
+                            interests: selected.toList(),
+                            showAge: true,
+                            allowChat: true,
+                          ),
+                        );
+                        await appState.configureInitialRoles(selectedRoles);
+                        await appState.setSelectedLocation(province, city);
+                        if (!context.mounted) return;
+                        Navigator.of(context)
+                            .popUntil((route) => route.isFirst);
+                      }
+                    : null,
                 child: const Text('ذخیره و ادامه'),
               ),
             ],

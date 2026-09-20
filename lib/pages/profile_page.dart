@@ -5,6 +5,7 @@ import 'package:patogh/pages/calendar_page.dart';
 import 'package:patogh/pages/edit_profile_page.dart';
 import 'package:patogh/pages/feedback_center_page.dart';
 import 'package:patogh/pages/ecosystem_hub_page.dart';
+import 'package:patogh/pages/engagement_hub_page.dart';
 import 'package:patogh/pages/dependents_page.dart';
 import 'package:patogh/pages/host_dashboard_page.dart';
 import 'package:patogh/pages/chat_page.dart';
@@ -137,6 +138,12 @@ class ProfilePage extends StatelessWidget {
                 Icons.emoji_events_outlined,
                 'مدال‌ها و افتخارات',
                 const BadgesPage(),
+              ),
+              _tile(
+                context,
+                Icons.explore_rounded,
+                'گذرنامه، چالش و مسیر',
+                const EngagementHubPage(),
               ),
               _tile(
                 context,

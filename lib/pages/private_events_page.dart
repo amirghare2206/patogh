@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:patogh/config/app_config.dart';
 import 'package:patogh/models/v9_models.dart';
 import 'package:patogh/state/v9_state.dart';
 import 'package:patogh/state/v10_state.dart';
@@ -436,18 +437,24 @@ class PrivateEventsPage extends StatelessWidget {
                   child: const Text('انصراف'),
                 ),
                 FilledButton(
-                  onPressed: () async {
-                    await v10State.payAndPublishPrivateEvent(
-                      eventId: event.id,
-                      quote: quote,
-                      boostEnabled: includeBoost,
-                      premiumTemplateEnabled: premiumTemplate,
-                    );
-                    if (dialogContext.mounted) {
-                      Navigator.pop(dialogContext);
-                    }
-                  },
-                  child: const Text('پرداخت آزمایشی و انتشار'),
+                  onPressed: AppConfig.isProduction
+                      ? null
+                      : () async {
+                          await v10State.payAndPublishPrivateEvent(
+                            eventId: event.id,
+                            quote: quote,
+                            boostEnabled: includeBoost,
+                            premiumTemplateEnabled: premiumTemplate,
+                          );
+                          if (dialogContext.mounted) {
+                            Navigator.pop(dialogContext);
+                          }
+                        },
+                  child: Text(
+                    AppConfig.isProduction
+                        ? 'انتشار مالی پس از اتصال درگاه'
+                        : 'پرداخت آزمایشی و انتشار',
+                  ),
                 ),
               ],
             );

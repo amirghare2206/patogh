@@ -1,22 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:patogh/models/media_attachment.dart';
 import 'package:patogh/models/user_role.dart';
+import 'package:patogh/services/media_service.dart';
 import 'package:patogh/state/app_state.dart';
 import 'package:patogh/theme/patogh_theme.dart';
+import 'package:patogh/widgets/media_attachment_strip.dart';
+import 'package:patogh/widgets/media_picker_panel.dart';
 
 class StoriesPage extends StatelessWidget {
   const StoriesPage({super.key});
-
   bool get canCreate =>
       appState.role == UserRole.venue ||
       appState.role == UserRole.organizer ||
       appState.role == UserRole.admin;
 
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: AnimatedBuilder(
-        animation: appState,
-        builder: (context, _) => ListView(
+  Widget build(BuildContext context) => SafeArea(
+    child: AnimatedBuilder(
+      animation: appState,
+      builder: (context, _) => RefreshIndicator(
+        onRefresh: () => appState.refreshSocialV12(),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(18),
           children: [
             Row(
@@ -50,8 +55,12 @@ class StoriesPage extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final story = appState.stories[index];
                   return InkWell(
-                    onTap: () =>
-                        _showStory(context, story.title, story.subtitle),
+                    onTap: () => _showStory(
+                      context,
+                      story.title,
+                      story.subtitle,
+                      story.media,
+                    ),
                     child: SizedBox(
                       width: 74,
                       child: Column(
@@ -101,44 +110,53 @@ class StoriesPage extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(22),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    CircleAvatar(
-                      backgroundColor: PatoghTheme.orange,
-                      child: Icon(
-                        story.ownerRole == UserRole.venue
-                            ? Icons.storefront_rounded
-                            : Icons.campaign_rounded,
-                      ),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: PatoghTheme.orange,
+                          child: Icon(
+                            story.ownerRole == UserRole.venue
+                                ? Icons.storefront_rounded
+                                : Icons.campaign_rounded,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                story.title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              Text(
+                                story.subtitle,
+                                style: const TextStyle(
+                                  color: Color(0xFFBBBBBB),
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Text(
+                                '${story.owner} • ${story.createdAt}',
+                                style: const TextStyle(
+                                  color: Color(0xFF858585),
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            story.title,
-                            style: const TextStyle(fontWeight: FontWeight.w900),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            story.subtitle,
-                            style: const TextStyle(
-                              color: Color(0xFFBBBBBB),
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${story.owner} • ${story.createdAt}',
-                            style: const TextStyle(
-                              color: Color(0xFF858585),
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    if (story.media.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      MediaAttachmentStrip(media: story.media, height: 120),
+                    ],
                   ],
                 ),
               ),
@@ -146,29 +164,37 @@ class StoriesPage extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
 
   Future<void> _createStory(BuildContext context) async {
     final title = TextEditingController();
     final subtitle = TextEditingController();
+    final media = <SelectedMedia>[];
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('استوری جدید'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: title,
-              decoration: const InputDecoration(labelText: 'عنوان'),
+        content: SizedBox(
+          width: 440,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: title,
+                  decoration: const InputDecoration(labelText: 'عنوان'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: subtitle,
+                  decoration: const InputDecoration(labelText: 'توضیح'),
+                ),
+                const SizedBox(height: 12),
+                MediaPickerPanel(items: media, postOrStory: true),
+              ],
             ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: subtitle,
-              decoration: const InputDecoration(labelText: 'توضیح'),
-            ),
-          ],
+          ),
         ),
         actions: [
           TextButton(
@@ -177,10 +203,11 @@ class StoriesPage extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () async {
-              if (title.text.trim().isEmpty) return;
+              if (title.text.trim().isEmpty && media.isEmpty) return;
               await appState.addStory(
                 title: title.text.trim(),
                 subtitle: subtitle.text.trim(),
+                media: media,
               );
               if (dialogContext.mounted) Navigator.pop(dialogContext);
             },
@@ -193,7 +220,12 @@ class StoriesPage extends StatelessWidget {
     subtitle.dispose();
   }
 
-  void _showStory(BuildContext context, String title, String subtitle) {
+  void _showStory(
+    BuildContext context,
+    String title,
+    String subtitle,
+    List<MediaAttachment> media,
+  ) {
     showDialog<void>(
       context: context,
       builder: (context) => Dialog.fullscreen(
@@ -219,7 +251,7 @@ class StoriesPage extends StatelessWidget {
               const Spacer(),
               const Icon(
                 Icons.auto_stories_rounded,
-                size: 92,
+                size: 72,
                 color: PatoghTheme.orange,
               ),
               const SizedBox(height: 18),
@@ -237,6 +269,10 @@ class StoriesPage extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Color(0xFFD3D3D3), fontSize: 16),
               ),
+              if (media.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                MediaAttachmentStrip(media: media, height: 170),
+              ],
               const Spacer(),
             ],
           ),

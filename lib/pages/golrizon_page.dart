@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:patogh/config/app_config.dart';
 import 'package:patogh/models/v10_models.dart';
 import 'package:patogh/models/patogh_event.dart';
 import 'package:patogh/state/app_state.dart';
@@ -379,22 +380,29 @@ class GolrizonPage extends StatelessWidget {
                   child: const Text('انصراف'),
                 ),
                 FilledButton(
-                  onPressed: () async {
-                    final value = int.tryParse(amount.text.trim()) ?? 0;
-                    if (value <= 0) return;
+                  onPressed: AppConfig.isProduction
+                      ? null
+                      : () async {
+                          final value = int.tryParse(amount.text.trim()) ?? 0;
+                          if (value <= 0) return;
 
-                    await v10State.contribute(
-                      campaignId: campaign.id,
-                      contributorLabel: appState.profile?.name ?? 'کاربر پاتوق',
-                      amount: value,
-                      anonymous: anonymous,
-                    );
+                          await v10State.contribute(
+                            campaignId: campaign.id,
+                            contributorLabel:
+                                appState.profile?.name ?? 'کاربر پاتوق',
+                            amount: value,
+                            anonymous: anonymous,
+                          );
 
-                    if (dialogContext.mounted) {
-                      Navigator.pop(dialogContext);
-                    }
-                  },
-                  child: const Text('پرداخت آزمایشی'),
+                          if (dialogContext.mounted) {
+                            Navigator.pop(dialogContext);
+                          }
+                        },
+                  child: Text(
+                    AppConfig.isProduction
+                        ? 'پرداخت گل‌ریزون پس از اتصال تسویه امن'
+                        : 'پرداخت آزمایشی',
+                  ),
                 ),
               ],
             );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:patogh/config/app_config.dart';
 import 'package:patogh/pages/auth/profile_setup_page.dart';
 import 'package:patogh/state/app_state.dart';
 
@@ -45,7 +46,9 @@ class _OtpPageState extends State<OtpPage> {
                   controller: codeController,
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
-                  decoration: const InputDecoration(hintText: '1234'),
+                  decoration: InputDecoration(
+                    hintText: AppConfig.isProduction ? 'کد تأیید' : '1234',
+                  ),
                 ),
                 const SizedBox(height: 14),
                 FilledButton(

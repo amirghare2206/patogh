@@ -65,12 +65,18 @@ class _PaymentPageState extends State<PaymentPage> {
               Text(
                 AppConfig.usePaymentApi
                     ? 'با ادامه، درگاه پرداخت امن باز می‌شود.'
-                    : 'حالت Demo فعال است؛ پرداخت به‌صورت آزمایشی ثبت می‌شود.',
+                    : AppConfig.isProduction
+                    ? 'پرداخت Production هنوز پیکربندی نشده و رزرو مالی غیرفعال است.'
+                    : 'حالت تست فعال است؛ پرداخت به‌صورت آزمایشی ثبت می‌شود.',
                 style: const TextStyle(color: Color(0xFFBBBBBB), height: 1.7),
               ),
               const SizedBox(height: 22),
               FilledButton.icon(
-                onPressed: loading ? null : _startPayment,
+                onPressed:
+                    loading ||
+                        (AppConfig.isProduction && !AppConfig.usePaymentApi)
+                    ? null
+                    : _startPayment,
                 icon: const Icon(Icons.lock_rounded),
                 label: Text(loading ? 'در حال اتصال...' : 'پرداخت و ثبت رزرو'),
               ),

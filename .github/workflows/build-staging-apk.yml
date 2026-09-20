@@ -1,0 +1,42 @@
+name: Build Multi-user Staging APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+      - name: Install Android API 36
+        run: yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - run: python3 tool/prepare_pubspec_release.py
+      - run: flutter pub get
+      - run: python3 tool/configure_android_release.py
+      - name: Analyze
+        run: flutter analyze
+      - name: Test
+        run: flutter test
+      - name: Build shared-backend test APK
+        run: |
+          flutter build apk --release \
+            --dart-define=PATOGH_MODE=staging \
+            --dart-define=SUPABASE_URL="${{ secrets.STAGING_SUPABASE_URL }}" \
+            --dart-define=SUPABASE_ANON_KEY="${{ secrets.STAGING_SUPABASE_ANON_KEY }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: patogh-v12-multiuser-staging-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14

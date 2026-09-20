@@ -7,6 +7,7 @@ import 'package:patogh/data/mock_data.dart' as mock;
 import 'package:patogh/models/chat_message.dart';
 import 'package:patogh/models/community.dart';
 import 'package:patogh/models/ecosystem_models.dart';
+import 'package:patogh/models/media_attachment.dart';
 import 'package:patogh/models/patogh_category.dart';
 import 'package:patogh/models/patogh_event.dart';
 import 'package:patogh/models/role_request.dart';
@@ -15,6 +16,7 @@ import 'package:patogh/models/timeline_post.dart';
 import 'package:patogh/models/user_profile.dart';
 import 'package:patogh/models/user_role.dart';
 import 'package:patogh/models/v8_models.dart';
+import 'package:patogh/services/media_service.dart';
 import 'package:patogh/services/platform_services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -846,6 +848,16 @@ class AppState extends ChangeNotifier {
           await _persistProfile();
         }
 
+        final remoteRoles = await PlatformServices.fetchMyRolesV12();
+        enabledRoles
+          ..clear()
+          ..add(UserRole.participant)
+          ..addAll(remoteRoles.map(UserRoleX.fromKey));
+        if (!enabledRoles.contains(activeRole)) {
+          activeRole = UserRole.participant;
+        }
+        await _persistRoles();
+
         await _syncReservationsFromRemote();
         favoriteIds
           ..clear()
@@ -854,61 +866,7 @@ class AppState extends ChangeNotifier {
         await _persistSets();
         await PlatformServices.registerPushToken();
 
-        final remoteTimeline = await PlatformServices.fetchTimelineV6();
-        if (remoteTimeline.isNotEmpty) {
-          timelinePosts
-            ..clear()
-            ..addAll(
-              remoteTimeline.map(
-                (row) => TimelinePost(
-                  id: '${row['id']}',
-                  author: (row['author_name'] as String?) ?? 'کاربر پاتوق',
-                  roleLabel: (row['role_label'] as String?) ?? 'شرکت‌کننده',
-                  eventTitle: (row['event_title'] as String?) ?? 'پاتوق',
-                  text: (row['text'] as String?) ?? '',
-                  createdAt: 'آنلاین',
-                ),
-              ),
-            );
-        }
-
-        final remoteStories = await PlatformServices.fetchStoriesV6();
-        if (remoteStories.isNotEmpty) {
-          stories
-            ..clear()
-            ..addAll(
-              remoteStories.map(
-                (row) => StoryItem(
-                  id: '${row['id']}',
-                  owner: (row['owner_name'] as String?) ?? 'پاتوق',
-                  ownerRole: UserRoleX.fromKey(row['owner_role'] as String?),
-                  title: (row['title'] as String?) ?? 'استوری',
-                  subtitle: (row['subtitle'] as String?) ?? '',
-                  createdAt: 'آنلاین',
-                ),
-              ),
-            );
-        }
-
-        final remoteCommunities = await PlatformServices.fetchCommunitiesV6();
-        if (remoteCommunities.isNotEmpty) {
-          communities
-            ..clear()
-            ..addAll(
-              remoteCommunities.map(
-                (row) => Community(
-                  id: '${row['id']}',
-                  title: (row['title'] as String?) ?? 'گروه پاتوق',
-                  description: (row['description'] as String?) ?? '',
-                  type: row['community_type'] == 'channel'
-                      ? CommunityType.channel
-                      : CommunityType.group,
-                  owner: (row['owner_name'] as String?) ?? 'کاربر پاتوق',
-                  members: (row['member_count'] as num?)?.toInt() ?? 1,
-                ),
-              ),
-            );
-        }
+        await refreshSocialV12(notify: false);
 
         if (role == UserRole.admin) {
           final remoteRoleRequests =
@@ -964,6 +922,13 @@ class AppState extends ChangeNotifier {
         profile = remoteProfile;
         await _persistProfile();
       }
+      final remoteRoles = await PlatformServices.fetchMyRolesV12();
+      enabledRoles
+        ..clear()
+        ..add(UserRole.participant)
+        ..addAll(remoteRoles.map(UserRoleX.fromKey));
+      if (!enabledRoles.contains(activeRole)) activeRole = UserRole.participant;
+      await _persistRoles();
 
       await _syncReservationsFromRemote();
       favoriteIds
@@ -999,9 +964,24 @@ class AppState extends ChangeNotifier {
   Future<void> configureInitialRoles(Set<UserRole> roles) async {
     enabledRoles
       ..clear()
-      ..add(UserRole.participant)
-      ..addAll(roles.where((role) => role != UserRole.admin));
+      ..add(UserRole.participant);
     activeRole = UserRole.participant;
+
+    final requested = roles.where(
+      (role) => role != UserRole.participant && role != UserRole.admin,
+    );
+
+    if (AppConfig.useSupabase) {
+      for (final role in requested) {
+        await PlatformServices.requestRoleV6(
+          role.key,
+          'درخواست اولیه نقش هنگام تکمیل پروفایل',
+        );
+      }
+    } else {
+      enabledRoles.addAll(requested);
+    }
+
     await _persistRoles();
     notifyListeners();
   }
@@ -1141,9 +1121,76 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> refreshSocialV12({bool notify = true}) async {
+    if (!AppConfig.useSupabase || !loggedIn) return;
+
+    final remoteTimeline = await PlatformServices.fetchTimelineV6();
+    final timeline = <TimelinePost>[];
+    for (final row in remoteTimeline) {
+      timeline.add(
+        TimelinePost(
+          id: '${row['id']}',
+          authorId: row['user_id'] as String?,
+          author: (row['author_name'] as String?) ?? 'کاربر پاتوق',
+          roleLabel: (row['role_label'] as String?) ?? 'شرکت‌کننده',
+          eventTitle: (row['event_title'] as String?) ?? 'پاتوق',
+          text: (row['text'] as String?) ?? '',
+          createdAt: 'آنلاین',
+          likes: (row['likes_count'] as num?)?.toInt() ?? 0,
+          media: await MediaService.hydrate(row['media'] as List?),
+        ),
+      );
+    }
+    timelinePosts
+      ..clear()
+      ..addAll(timeline);
+
+    final remoteStories = await PlatformServices.fetchStoriesV6();
+    final storyList = <StoryItem>[];
+    for (final row in remoteStories) {
+      storyList.add(
+        StoryItem(
+          id: '${row['id']}',
+          ownerId: row['user_id'] as String?,
+          owner: (row['owner_name'] as String?) ?? 'پاتوق',
+          ownerRole: UserRoleX.fromKey(row['owner_role'] as String?),
+          title: (row['title'] as String?) ?? 'استوری',
+          subtitle: (row['subtitle'] as String?) ?? '',
+          createdAt: 'آنلاین',
+          media: await MediaService.hydrate(row['media'] as List?),
+        ),
+      );
+    }
+    stories
+      ..clear()
+      ..addAll(storyList);
+
+    final remoteCommunities = await PlatformServices.fetchCommunitiesV6();
+    communities
+      ..clear()
+      ..addAll(
+        remoteCommunities.map(
+          (row) => Community(
+            id: '${row['id']}',
+            title: (row['title'] as String?) ?? 'گروه پاتوق',
+            description: (row['description'] as String?) ?? '',
+            type: row['community_type'] == 'channel'
+                ? CommunityType.channel
+                : CommunityType.group,
+            owner: (row['owner_name'] as String?) ?? 'کاربر پاتوق',
+            members: (row['member_count'] as num?)?.toInt() ?? 1,
+            joined: (row['joined'] as bool?) ?? false,
+          ),
+        ),
+      );
+
+    if (notify) notifyListeners();
+  }
+
   Future<void> addTimelinePost({
     required String eventTitle,
     required String text,
+    List<SelectedMedia> media = const [],
   }) async {
     String? eventId;
     for (final event in events) {
@@ -1152,13 +1199,31 @@ class AppState extends ChangeNotifier {
         break;
       }
     }
-    await PlatformServices.addTimelinePostV6(
-      text: text,
-      authorName: profile?.name ?? 'کاربر پاتوق',
-      roleLabel: role.label,
-      eventTitle: eventTitle,
-      eventId: eventId,
-    );
+
+    if (AppConfig.useSupabase) {
+      final postId = await PlatformServices.createTimelinePostV12(
+        text: text,
+        authorName: profile?.name ?? 'کاربر پاتوق',
+        roleLabel: role.label,
+        eventTitle: eventTitle,
+        eventId: eventId,
+      );
+      if (postId == null) return;
+      for (var i = 0; i < media.length; i++) {
+        final uploaded = await MediaService.uploadValidated(
+          media[i],
+          scope: 'post',
+        );
+        await PlatformServices.attachMediaToPostV12(postId, uploaded.id, i);
+      }
+      await refreshSocialV12();
+      return;
+    }
+
+    final localMedia = <MediaAttachment>[];
+    for (final item in media) {
+      localMedia.add(await MediaService.uploadValidated(item, scope: 'post'));
+    }
     timelinePosts.insert(
       0,
       TimelinePost(
@@ -1168,12 +1233,18 @@ class AppState extends ChangeNotifier {
         eventTitle: eventTitle,
         text: text,
         createdAt: 'همین الان',
+        media: localMedia,
       ),
     );
     notifyListeners();
   }
 
   Future<void> likeTimelinePost(String postId) async {
+    if (AppConfig.useSupabase) {
+      await PlatformServices.toggleTimelineLikeV12(postId);
+      await refreshSocialV12();
+      return;
+    }
     final index = timelinePosts.indexWhere((post) => post.id == postId);
     if (index == -1) return;
     timelinePosts[index] = timelinePosts[index].copyWith(
@@ -1185,13 +1256,31 @@ class AppState extends ChangeNotifier {
   Future<void> addStory({
     required String title,
     required String subtitle,
+    List<SelectedMedia> media = const [],
   }) async {
-    await PlatformServices.addStoryV6(
-      title: title,
-      subtitle: subtitle,
-      ownerName: profile?.name ?? role.label,
-      ownerRole: role.key,
-    );
+    if (AppConfig.useSupabase) {
+      final storyId = await PlatformServices.createStoryV12(
+        title: title,
+        subtitle: subtitle,
+        ownerName: profile?.name ?? role.label,
+        ownerRole: role.key,
+      );
+      if (storyId == null) return;
+      for (var i = 0; i < media.length; i++) {
+        final uploaded = await MediaService.uploadValidated(
+          media[i],
+          scope: 'story',
+        );
+        await PlatformServices.attachMediaToStoryV12(storyId, uploaded.id, i);
+      }
+      await refreshSocialV12();
+      return;
+    }
+
+    final localMedia = <MediaAttachment>[];
+    for (final item in media) {
+      localMedia.add(await MediaService.uploadValidated(item, scope: 'story'));
+    }
     stories.insert(
       0,
       StoryItem(
@@ -1201,6 +1290,7 @@ class AppState extends ChangeNotifier {
         title: title,
         subtitle: subtitle,
         createdAt: 'همین الان',
+        media: localMedia,
       ),
     );
     notifyListeners();
@@ -1211,12 +1301,16 @@ class AppState extends ChangeNotifier {
     required String description,
     required CommunityType type,
   }) async {
-    await PlatformServices.createCommunityV6(
-      title: title,
-      description: description,
-      type: type == CommunityType.channel ? 'channel' : 'group',
-      ownerName: profile?.name ?? 'کاربر پاتوق',
-    );
+    if (AppConfig.useSupabase) {
+      await PlatformServices.createCommunityV12(
+        title: title,
+        description: description,
+        type: type == CommunityType.channel ? 'channel' : 'group',
+        ownerName: profile?.name ?? 'کاربر پاتوق',
+      );
+      await refreshSocialV12();
+      return;
+    }
     communities.insert(
       0,
       Community(
@@ -1233,6 +1327,11 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> toggleCommunityMembership(String communityId) async {
+    if (AppConfig.useSupabase) {
+      await PlatformServices.toggleCommunityMembershipV12(communityId);
+      await refreshSocialV12();
+      return;
+    }
     final index = communities.indexWhere(
       (community) => community.id == communityId,
     );
@@ -1570,26 +1669,73 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> sendMessage(String roomId, String text) async {
+  Future<void> sendMessage(
+    String roomId,
+    String text, {
+    List<SelectedMedia> media = const [],
+  }) async {
     if (AppConfig.useSupabase) {
-      await PlatformServices.sendMessage(roomId, text);
+      final messageId = await PlatformServices.sendMessageV12(roomId, text);
+      if (messageId == null) return;
+      for (var i = 0; i < media.length; i++) {
+        final uploaded = await MediaService.uploadValidated(
+          media[i],
+          scope: 'community',
+        );
+        await PlatformServices.attachMediaToMessageV12(
+          messageId,
+          uploaded.id,
+          i,
+        );
+      }
+      await _refreshChatRoomV12(roomId);
       return;
     }
     final list = chats.putIfAbsent(roomId, () => <ChatMessage>[]);
-    list.add(ChatMessage(text: text, mine: true, time: _timeNow()));
+    final localMedia = <MediaAttachment>[];
+    for (final item in media) {
+      localMedia.add(
+        await MediaService.uploadValidated(item, scope: 'community'),
+      );
+    }
+    list.add(
+      ChatMessage(text: text, mine: true, time: _timeNow(), media: localMedia),
+    );
     await _persistChats();
+    notifyListeners();
+  }
+
+  Future<void> _refreshChatRoomV12(String roomId) async {
+    final rows = await PlatformServices.fetchChatRowsV12(roomId);
+    final userId = PlatformServices.currentUserId;
+    final output = <ChatMessage>[];
+    for (final row in rows) {
+      final created = DateTime.tryParse('${row['created_at']}');
+      final time = created == null
+          ? ''
+          : '${created.hour.toString().padLeft(2, '0')}:${created.minute.toString().padLeft(2, '0')}';
+      output.add(
+        ChatMessage(
+          id: '${row['id']}',
+          userId: row['user_id'] as String?,
+          text: (row['text'] as String?) ?? '',
+          mine: '${row['user_id']}' == userId,
+          time: time,
+          media: await MediaService.hydrate(row['media'] as List?),
+        ),
+      );
+    }
+    chats[roomId] = output;
     notifyListeners();
   }
 
   Future<void> startChatRoom(String roomId) async {
     await _chatSubscription?.cancel();
     if (!AppConfig.useSupabase) return;
-    chats[roomId] = await PlatformServices.fetchMessages(roomId);
-    notifyListeners();
+    await _refreshChatRoomV12(roomId);
     _chatSubscription = PlatformServices.watchMessages(roomId)
-        .listen((messages) {
-          chats[roomId] = messages;
-          notifyListeners();
+        .listen((_) async {
+          await _refreshChatRoomV12(roomId);
         });
   }
 
@@ -1605,6 +1751,23 @@ class AppState extends ChangeNotifier {
         ChatMessage(text: 'خوش اومدین 👋', mine: false, time: '۱۸:۰۰'),
       ],
     );
+  }
+
+  Future<void> reportContent({
+    required String targetType,
+    required String targetId,
+    String reason = 'گزارش کاربر',
+  }) async {
+    await PlatformServices.reportContentV12(
+      targetType: targetType,
+      targetId: targetId,
+      reason: reason,
+    );
+  }
+
+  Future<void> blockUser(String userId) async {
+    await PlatformServices.blockUserV12(userId);
+    if (AppConfig.useSupabase) await refreshSocialV12();
   }
 
   int matchScore(List<String> eventTags) {

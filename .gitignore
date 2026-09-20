@@ -46,3 +46,13 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+# Patogh release secrets
+config/staging.json
+config/production.json
+android/key.properties
+android/app/*.jks
+android/app/*.keystore
+
+# Patogh local staging
+config/staging.json
+backend/supabase/.temp/

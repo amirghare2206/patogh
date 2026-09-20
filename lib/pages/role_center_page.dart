@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:patogh/config/app_config.dart';
 import 'package:patogh/models/user_role.dart';
 import 'package:patogh/state/app_state.dart';
 import 'package:patogh/theme/patogh_theme.dart';
@@ -120,13 +121,16 @@ class RoleCenterPage extends StatelessWidget {
                             onPressed: () => _requestRole(context, role),
                             child: const Text('درخواست'),
                           ),
-                          OutlinedButton(
-                            onPressed: () => appState.setDemoRole(role),
-                            child: const Text('دمو'),
-                          ),
+                          if (AppConfig.isDemo)
+                            OutlinedButton(
+                              onPressed: () => appState.setDemoRole(role),
+                              child: const Text('دمو'),
+                            ),
                         ],
                       )
-                    else if (!enabled && role == UserRole.admin)
+                    else if (!enabled &&
+                        role == UserRole.admin &&
+                        AppConfig.isDemo)
                       OutlinedButton(
                         onPressed: () => appState.setDemoRole(role),
                         child: const Text('ادمین Demo'),

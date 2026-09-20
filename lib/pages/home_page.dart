@@ -3,6 +3,7 @@ import 'package:patogh/models/v8_models.dart';
 import 'package:patogh/pages/ai_concierge_page.dart';
 import 'package:patogh/pages/campaigns_page.dart';
 import 'package:patogh/pages/enterprise_page.dart';
+import 'package:patogh/pages/engagement_hub_page.dart';
 import 'package:patogh/pages/event_detail_page.dart';
 import 'package:patogh/pages/event_request_page.dart';
 import 'package:patogh/pages/golrizon_page.dart';
@@ -258,6 +259,13 @@ class HomePage extends StatelessWidget {
                     'با زبان خودت تجربه پیدا کن',
                     Icons.auto_awesome_rounded,
                     const AiConciergePage(),
+                  ),
+                  _service(
+                    context,
+                    'تجربه و کشف',
+                    'گیمیفیکیشن، داستان و مسیر',
+                    Icons.explore_rounded,
+                    const EngagementHubPage(),
                   ),
                   _service(
                     context,

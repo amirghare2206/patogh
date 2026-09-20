@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:patogh/config/app_config.dart';
 import 'package:patogh/pages/auth/otp_page.dart';
 import 'package:patogh/state/app_state.dart';
 import 'package:patogh/theme/patogh_theme.dart';
@@ -85,11 +86,17 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'در حالت Demo کد ورود 1234 است؛ در Production پیامک واقعی ارسال می‌شود.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Color(0xFF888888), fontSize: 11),
-                ),
+                if (!AppConfig.isProduction)
+                  Text(
+                    AppConfig.isStaging
+                        ? 'حالت تست چندکاربره: کد ورود 1234 است.'
+                        : 'حالت Demo: کد ورود 1234 است.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFF888888),
+                      fontSize: 11,
+                    ),
+                  ),
               ],
             ),
           ),
