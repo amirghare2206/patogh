@@ -56,3 +56,4 @@ android/app/*.keystore
 # Patogh local staging
 config/staging.json
 backend/supabase/.temp/
+apk_artifact/

@@ -73,14 +73,24 @@ class PlatformServices {
       if (code != '1234') {
         throw Exception('کد تست چندکاربره 1234 است.');
       }
-      if (_supabase!.auth.currentUser == null) {
+
+      final normalizedPhone = normalizeIranPhone(phone);
+      final currentUser = _supabase!.auth.currentUser;
+      final currentTesterPhone = currentUser?.userMetadata?['tester_phone']
+          ?.toString();
+
+      if (currentUser == null || currentTesterPhone != normalizedPhone) {
+        if (currentUser != null) {
+          await _supabase!.auth.signOut();
+        }
         await _supabase!.auth.signInAnonymously(
-          data: {'tester_phone': normalizeIranPhone(phone)},
+          data: {'tester_phone': normalizedPhone},
         );
       }
+
       await _supabase!.rpc(
         'ensure_profile_v12',
-        params: {'p_phone': normalizeIranPhone(phone)},
+        params: {'p_phone': normalizedPhone},
       );
       return;
     }
@@ -93,9 +103,13 @@ class PlatformServices {
   }
 
   static Future<void> signOut() async {
-    if (AppConfig.useSupabase) {
-      await _supabase!.auth.signOut();
-    }
+    if (!AppConfig.useSupabase) return;
+
+    // در Staging نشست Anonymous را نگه می‌داریم تا ورود دوباره با همان
+    // شماره، همان UID آزمایشی را بازیابی کند.
+    if (AppConfig.useStagingAnonymousAuth) return;
+
+    await _supabase!.auth.signOut();
   }
 
   static Future<UserProfile?> loadProfile() async {
@@ -128,9 +142,13 @@ class PlatformServices {
     final userId = currentUserId;
     if (!AppConfig.useSupabase || userId == null) return;
 
+    final authUser = _supabase!.auth.currentUser;
+    final profilePhone =
+        authUser?.phone ?? authUser?.userMetadata?['tester_phone']?.toString();
+
     await _supabase!.from('profiles').upsert({
       'id': userId,
-      'phone': _supabase!.auth.currentUser?.phone,
+      'phone': profilePhone,
       'name': profile.name,
       'age': profile.age,
       'city': profile.city,
