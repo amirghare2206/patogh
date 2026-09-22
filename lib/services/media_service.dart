@@ -58,25 +58,17 @@ class MediaService {
   static Future<List<SelectedMedia>> pickAudio() async {
     final files = await FilePicker.pickFiles(type: FileType.audio);
 
-    if (files.isEmpty) {
-      return const [];
-    }
-
     final output = <SelectedMedia>[];
-
     for (final file in files) {
-      final bytes = await file.readAsBytes();
-
       output.add(
         SelectedMedia(
-          bytes: bytes,
+          bytes: await file.readAsBytes(),
           fileName: file.name,
           mimeType: _mimeForName(file.name, fallback: 'audio/mpeg'),
           kind: MediaKind.audio,
         ),
       );
     }
-
     return output;
   }
 

@@ -1,9 +1,10 @@
 import 'package:firebase_core/firebase_core.dart';
 
 class AppConfig {
+  static const _productBuild = bool.fromEnvironment('dart.vm.product');
   static const mode = String.fromEnvironment(
     'PATOGH_MODE',
-    defaultValue: 'demo',
+    defaultValue: _productBuild ? 'production' : 'demo',
   );
   static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
   static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');

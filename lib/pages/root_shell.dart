@@ -7,15 +7,13 @@ import 'package:patogh/pages/admin/engagement_admin_page.dart';
 import 'package:patogh/pages/admin/category_management_page.dart';
 import 'package:patogh/pages/communities_page.dart';
 import 'package:patogh/pages/home_page.dart';
-import 'package:patogh/pages/golrizon_page.dart';
-import 'package:patogh/pages/surprise_page.dart';
 import 'package:patogh/pages/notifications_page.dart';
 import 'package:patogh/pages/coordinator_dashboard_page.dart';
 import 'package:patogh/pages/organizer_dashboard_page.dart';
 import 'package:patogh/pages/profile_page.dart';
+import 'package:patogh/pages/reservation_page.dart';
 import 'package:patogh/pages/stories_page.dart';
 import 'package:patogh/pages/timeline_page.dart';
-import 'package:patogh/pages/time_occasion_hub_page.dart';
 import 'package:patogh/pages/admin/time_engine_admin_page.dart';
 import 'package:patogh/pages/venue_dashboard_page.dart';
 import 'package:patogh/state/app_state.dart';
@@ -55,8 +53,8 @@ class _RootShellState extends State<RootShell> {
               child: Container(
                 height: 84,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF101010),
-                  border: Border(top: BorderSide(color: Color(0xFF242424))),
+                  color: PatoghTheme.surface,
+                  border: Border(top: BorderSide(color: Color(0xFF30365E))),
                 ),
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -185,21 +183,15 @@ class _RootShellState extends State<RootShell> {
         return const _ShellConfig(
           pages: [
             HomePage(),
-            TimeOccasionHubPage(),
-            SurprisePage(),
-            GolrizonPage(),
+            ReservationPage(),
             TimelinePage(),
-            CommunitiesPage(),
             NotificationsPage(),
             ProfilePage(),
           ],
           items: [
             _NavItem(Icons.home_rounded, 'خانه'),
-            _NavItem(Icons.calendar_month_rounded, 'تقویم'),
-            _NavItem(Icons.card_giftcard_rounded, 'سورپرایز'),
-            _NavItem(Icons.volunteer_activism_rounded, 'گل‌ریزون'),
+            _NavItem(Icons.event_available_rounded, 'رویدادها'),
             _NavItem(Icons.dynamic_feed_rounded, 'تایم‌لاین'),
-            _NavItem(Icons.groups_rounded, 'گروه‌ها'),
             _NavItem(Icons.notifications_rounded, 'اعلان‌ها'),
             _NavItem(Icons.person_rounded, 'پروفایل'),
           ],

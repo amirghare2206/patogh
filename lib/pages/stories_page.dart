@@ -42,8 +42,8 @@ class StoriesPage extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             const Text(
-              'معرفی رویدادها و فضای میزبان توسط برگزارکننده‌ها و کسب‌وکارها',
-              style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 12),
+              'لحظه‌ها، خبرها و تجربه‌های تازه از دنیای پاتوق',
+              style: TextStyle(color: PatoghTheme.muted, fontSize: 12),
             ),
             const SizedBox(height: 18),
             SizedBox(

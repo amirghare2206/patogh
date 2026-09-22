@@ -64,6 +64,28 @@ class AdminBannerCampaignPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      if (banner.imageAsset != null ||
+                          banner.imageUrl != null) ...[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: AspectRatio(
+                            aspectRatio: 16 / 9,
+                            child: banner.imageAsset != null
+                                ? Image.asset(
+                                    banner.imageAsset!,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.network(
+                                    banner.imageUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => const ColoredBox(
+                                      color: PatoghTheme.surface2,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
                       Row(
                         children: [
                           Expanded(
@@ -160,6 +182,7 @@ class AdminBannerCampaignPage extends StatelessWidget {
     final title = TextEditingController();
     final subtitle = TextEditingController();
     final audience = TextEditingController(text: 'همه کاربران');
+    final imageUrl = TextEditingController();
     var placement = 'home';
     var sponsored = false;
 
@@ -185,6 +208,15 @@ class AdminBannerCampaignPage extends StatelessWidget {
                 TextField(
                   controller: audience,
                   decoration: const InputDecoration(labelText: 'مخاطب'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: imageUrl,
+                  keyboardType: TextInputType.url,
+                  decoration: const InputDecoration(
+                    labelText: 'لینک تصویر بنر (اختیاری)',
+                    hintText: 'https://.../banner.jpg',
+                  ),
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
@@ -237,6 +269,7 @@ class AdminBannerCampaignPage extends StatelessWidget {
                   placement: placement,
                   audience: audience.text.trim(),
                   sponsored: sponsored,
+                  imageUrl: imageUrl.text.trim(),
                 );
                 if (dialogContext.mounted) Navigator.pop(dialogContext);
               },
@@ -250,6 +283,7 @@ class AdminBannerCampaignPage extends StatelessWidget {
     title.dispose();
     subtitle.dispose();
     audience.dispose();
+    imageUrl.dispose();
   }
 
   Future<void> _addCampaign(BuildContext context) async {

@@ -57,3 +57,4 @@ android/app/*.keystore
 config/staging.json
 backend/supabase/.temp/
 apk_artifact/
+patogh_v13_public_android_ios.zip

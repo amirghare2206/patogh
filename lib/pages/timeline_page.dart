@@ -178,11 +178,36 @@ class TimelinePage extends StatelessWidget {
         .toList();
     if (items.isEmpty) return const SizedBox.shrink();
     final banner = items.first;
+    if (banner.imageAsset != null || banner.imageUrl != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: AspectRatio(
+          aspectRatio: 2.35,
+          child: banner.imageAsset != null
+              ? Image.asset(
+                  banner.imageAsset!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) =>
+                      _promoFallback(banner.title, banner.subtitle),
+                )
+              : Image.network(
+                  banner.imageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) =>
+                      _promoFallback(banner.title, banner.subtitle),
+                ),
+        ),
+      );
+    }
+    return _promoFallback(banner.title, banner.subtitle);
+  }
+
+  Widget _promoFallback(String title, String subtitle) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF26384A), Color(0xFF181818)],
+          colors: [PatoghTheme.purple, PatoghTheme.surface],
         ),
         borderRadius: BorderRadius.circular(18),
       ),
@@ -195,13 +220,13 @@ class TimelinePage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  banner.title,
+                  title,
                   style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
                 Text(
-                  banner.subtitle,
+                  subtitle,
                   style: const TextStyle(
-                    color: Color(0xFFBBBBBB),
+                    color: PatoghTheme.muted,
                     fontSize: 10,
                   ),
                 ),

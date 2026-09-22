@@ -129,50 +129,52 @@ class _ReservationPageState extends State<ReservationPage> {
   }
 
   Widget _campaignBanner() {
-    final banner = appState.banners.first;
+    final items = appState.banners
+        .where((item) => item.placement == 'home')
+        .toList();
+    if (items.isEmpty) return const SizedBox.shrink();
+    final banner = items.first;
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 0, 22, 14),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF4A2B16), Color(0xFF1A1A1A)],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: banner.imageAsset != null
+              ? Image.asset(
+                  banner.imageAsset!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) =>
+                      _campaignFallback(banner.title, banner.subtitle),
+                )
+              : banner.imageUrl != null
+              ? Image.network(
+                  banner.imageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) =>
+                      _campaignFallback(banner.title, banner.subtitle),
+                )
+              : _campaignFallback(banner.title, banner.subtitle),
+        ),
+      ),
+    );
+  }
+
+  Widget _campaignFallback(String title, String subtitle) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: const BoxDecoration(gradient: PatoghTheme.brandGradient),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
           ),
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: Row(
-          children: [
-            const CircleAvatar(
-              backgroundColor: PatoghTheme.orange,
-              child: Icon(Icons.campaign_rounded),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    banner.title,
-                    style: const TextStyle(fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    banner.subtitle,
-                    style: const TextStyle(
-                      color: Color(0xFFCCCCCC),
-                      fontSize: 10,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (banner.sponsored)
-              const Text(
-                'اسپانسرشده',
-                style: TextStyle(color: PatoghTheme.orange, fontSize: 8),
-              ),
-          ],
-        ),
+          const SizedBox(height: 4),
+          Text(subtitle),
+        ],
       ),
     );
   }

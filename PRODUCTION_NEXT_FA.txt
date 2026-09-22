@@ -1,0 +1,10 @@
+برای Production واقعی فقط این اتصال‌ها باقی می‌مانند:
+
+- OTP واقعی: Firebase Auth / Supabase Auth / سرویس پیامک ایرانی
+- دیتابیس آنلاین: Firebase Firestore / Supabase
+- پرداخت واقعی: درگاه پرداخت انتخابی
+- Push Notification: FCM
+- Chat real-time: Firestore / Supabase Realtime
+- Matching سرورمحور: Cloud Function / API backend
+- Admin/Host permissions: backend roles
+- Android release signing: keystore + Play Console

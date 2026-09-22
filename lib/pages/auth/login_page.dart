@@ -26,10 +26,25 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(
-                  Icons.groups_rounded,
-                  size: 76,
-                  color: PatoghTheme.orange,
+                Center(
+                  child: Container(
+                    width: 108,
+                    height: 108,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: Image.asset(
+                      'assets/branding/patogh_logo.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) => const Icon(
+                        Icons.groups_rounded,
+                        size: 70,
+                        color: PatoghTheme.orange,
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 const Text(
@@ -41,7 +56,7 @@ class _LoginPageState extends State<LoginPage> {
                 const Text(
                   'آدم‌های تازه، دورهمی‌های واقعی',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Color(0xFFAAAAAA)),
+                  style: TextStyle(color: PatoghTheme.muted),
                 ),
                 const SizedBox(height: 28),
                 TextField(

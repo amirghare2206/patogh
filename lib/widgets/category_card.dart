@@ -23,11 +23,25 @@ class CategoryCard extends StatelessWidget {
               Container(
                 width: 52,
                 height: 52,
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
                   color: category.accent.withAlpha(34),
                   borderRadius: BorderRadius.circular(17),
                 ),
-                child: Icon(category.icon, color: category.accent, size: 31),
+                child: category.logoUrl != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          category.logoUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Icon(
+                            category.icon,
+                            color: category.accent,
+                            size: 31,
+                          ),
+                        ),
+                      )
+                    : Icon(category.icon, color: category.accent, size: 31),
               ),
               const SizedBox(height: 8),
               Text(

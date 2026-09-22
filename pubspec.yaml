@@ -61,6 +61,12 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
 
+  assets:
+    - assets/branding/patogh_logo.png
+    - assets/branding/app_icon_1024.png
+    - assets/branding/splash_public.jpg
+    - assets/banners/
+
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

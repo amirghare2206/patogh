@@ -182,6 +182,8 @@ class BannerItem {
   final String audience;
   final String actionLabel;
   final bool sponsored;
+  final String? imageAsset;
+  final String? imageUrl;
 
   const BannerItem({
     required this.id,
@@ -191,6 +193,8 @@ class BannerItem {
     required this.audience,
     required this.actionLabel,
     this.sponsored = false,
+    this.imageAsset,
+    this.imageUrl,
   });
 }
 

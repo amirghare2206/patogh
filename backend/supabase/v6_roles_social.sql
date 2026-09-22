@@ -12,6 +12,7 @@ create table if not exists public.categories (
   subtitle text not null default '',
   icon_code_point int,
   color_value bigint,
+  logo_url text,
   sort_order int not null default 0,
   is_active boolean not null default true,
   created_at timestamptz not null default now()

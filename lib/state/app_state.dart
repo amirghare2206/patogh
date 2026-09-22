@@ -531,29 +531,58 @@ class AppState extends ChangeNotifier {
 
   final List<BannerItem> banners = <BannerItem>[
     const BannerItem(
-      id: 'banner-1',
-      title: 'جشنواره اولین پاتوق',
-      subtitle: '۲۰٪ تخفیف برای اولین تجربه',
+      id: 'banner-discover',
+      title: 'رویدادهای شهر همین‌جاست',
+      subtitle: 'کافه‌گردی، سفر، بازی، دورهمی و تجربه‌های تازه',
       placement: 'home',
-      audience: 'کاربران جدید',
-      actionLabel: 'مشاهده جشنواره',
+      audience: 'همه کاربران',
+      actionLabel: 'مشاهده رویدادها',
+      imageAsset: 'assets/banners/01_discover_events.jpg',
     ),
     const BannerItem(
-      id: 'banner-2',
-      title: 'شب فرهنگی با حمایت آینده روشن',
-      subtitle: 'هزینه حضور توسط اسپانسر پرداخت شده است',
+      id: 'banner-invites',
+      title: 'دعوت‌نامه و رویدادهای خصوصی',
+      subtitle: 'تولد، عروسی، دورهمی خانوادگی، یادبود و همایش',
       placement: 'home',
-      audience: 'کاربران با اعتبار حضور بالا',
-      actionLabel: 'مشاهده رویداد',
-      sponsored: true,
+      audience: 'همه کاربران',
+      actionLabel: 'ساخت دعوت‌نامه',
+      imageAsset: 'assets/banners/02_private_invites.jpg',
     ),
     const BannerItem(
-      id: 'banner-3',
+      id: 'banner-memories',
+      title: 'استوری و آلبوم خاطرات',
+      subtitle: 'لحظه‌های رویداد را ثبت کن و با جمع خودت به اشتراک بگذار',
+      placement: 'home',
+      audience: 'همه کاربران',
+      actionLabel: 'مشاهده خاطره‌ها',
+      imageAsset: 'assets/banners/03_memories.jpg',
+    ),
+    const BannerItem(
+      id: 'banner-surprise',
+      title: 'سورپرایز و گل‌ریزون',
+      subtitle: 'برای شادی، حمایت و کار خیر کنار هم باشیم',
+      placement: 'home',
+      audience: 'همه کاربران',
+      actionLabel: 'شروع',
+      imageAsset: 'assets/banners/04_surprise_golrizon.jpg',
+    ),
+    const BannerItem(
+      id: 'banner-calendar',
+      title: 'تقویم هوشمند مناسبت‌ها',
+      subtitle: 'ملی، مذهبی، جهانی، فصلی و شخصی؛ هر مناسبت یک فرصت تازه',
+      placement: 'home',
+      audience: 'همه کاربران',
+      actionLabel: 'دیدن مناسبت‌ها',
+      imageAsset: 'assets/banners/05_smart_calendar.jpg',
+    ),
+    const BannerItem(
+      id: 'banner-timeline',
       title: 'تجربه‌ات را ثبت کن',
-      subtitle: 'بازخورد تأییدشده به بهتر شدن میزبان، برگزارکننده و رویداد کمک می‌کند',
+      subtitle: 'بازخورد تأییدشده به بهتر شدن رویدادها و میزبان‌ها کمک می‌کند',
       placement: 'timeline',
       audience: 'شرکت‌کنندگان',
       actionLabel: 'ثبت تجربه',
+      imageAsset: 'assets/banners/03_memories.jpg',
     ),
   ];
 
@@ -836,7 +865,48 @@ class AppState extends ChangeNotifier {
                 'colorValue': row['color_value'],
                 'sortOrder': row['sort_order'],
                 'isActive': row['is_active'],
+                'logoUrl': row['logo_url'],
               }),
+            ),
+          );
+      }
+
+      final remoteBanners = await PlatformServices.fetchBannersV13();
+      if (remoteBanners.isNotEmpty) {
+        final parsed = <BannerItem>[];
+        for (final row in remoteBanners) {
+          final placements = (row['banner_placements'] as List?) ?? const [];
+          final audienceRules = Map<String, dynamic>.from(
+            (row['audience_rules'] as Map?) ?? const <String, dynamic>{},
+          );
+          for (final rawPlacement in placements) {
+            final placementMap = Map<String, dynamic>.from(rawPlacement as Map);
+            parsed.add(
+              BannerItem(
+                id: '${row['id']}',
+                title: (row['title'] as String?) ?? 'پاتوق',
+                subtitle: (row['subtitle'] as String?) ?? '',
+                placement: (placementMap['placement'] as String?) ?? 'home',
+                audience: (audienceRules['label'] as String?) ?? 'همه کاربران',
+                actionLabel: (row['action_label'] as String?) ?? 'مشاهده',
+                sponsored: (row['sponsored'] as bool?) ?? false,
+                imageUrl: (row['media_url'] as String?)?.trim().isEmpty == true
+                    ? null
+                    : (row['media_url'] as String?),
+              ),
+            );
+          }
+        }
+        final baked = List<BannerItem>.from(banners);
+        banners
+          ..clear()
+          ..addAll(parsed)
+          ..addAll(
+            baked.where(
+              (item) => !parsed.any(
+                (remote) =>
+                    remote.id == item.id && remote.placement == item.placement,
+              ),
             ),
           );
       }
@@ -1098,6 +1168,7 @@ class AppState extends ChangeNotifier {
       'color_value': category.colorValue,
       'sort_order': category.sortOrder,
       'is_active': category.isActive,
+      'logo_url': category.logoUrl,
     });
     categories.add(category);
     categories.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
@@ -1391,17 +1462,27 @@ class AppState extends ChangeNotifier {
     required String placement,
     required String audience,
     bool sponsored = false,
+    String? imageUrl,
   }) async {
+    final remoteId = await PlatformServices.saveBannerV13(
+      title: title,
+      subtitle: subtitle,
+      placement: placement,
+      audience: audience,
+      sponsored: sponsored,
+      imageUrl: imageUrl,
+    );
     banners.insert(
       0,
       BannerItem(
-        id: 'banner-${DateTime.now().microsecondsSinceEpoch}',
+        id: remoteId ?? 'banner-${DateTime.now().microsecondsSinceEpoch}',
         title: title,
         subtitle: subtitle,
         placement: placement,
         audience: audience,
         actionLabel: 'مشاهده',
         sponsored: sponsored,
+        imageUrl: imageUrl?.trim().isEmpty == true ? null : imageUrl?.trim(),
       ),
     );
     notifyListeners();

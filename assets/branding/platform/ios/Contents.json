@@ -1,0 +1,116 @@
+{
+  "images": [
+    {
+      "size": "20x20",
+      "idiom": "iphone",
+      "filename": "Icon-Notification_40.png",
+      "scale": "2x"
+    },
+    {
+      "size": "20x20",
+      "idiom": "iphone",
+      "filename": "Icon-Notification_60.png",
+      "scale": "3x"
+    },
+    {
+      "size": "29x29",
+      "idiom": "iphone",
+      "filename": "Icon-Settings_58.png",
+      "scale": "2x"
+    },
+    {
+      "size": "29x29",
+      "idiom": "iphone",
+      "filename": "Icon-Settings_87.png",
+      "scale": "3x"
+    },
+    {
+      "size": "40x40",
+      "idiom": "iphone",
+      "filename": "Icon-Spotlight_80.png",
+      "scale": "2x"
+    },
+    {
+      "size": "40x40",
+      "idiom": "iphone",
+      "filename": "Icon-Spotlight_120.png",
+      "scale": "3x"
+    },
+    {
+      "size": "60x60",
+      "idiom": "iphone",
+      "filename": "Icon-App_120.png",
+      "scale": "2x"
+    },
+    {
+      "size": "60x60",
+      "idiom": "iphone",
+      "filename": "Icon-App_180.png",
+      "scale": "3x"
+    },
+    {
+      "size": "20x20",
+      "idiom": "ipad",
+      "filename": "Icon-Notification-iPad_20.png",
+      "scale": "1x"
+    },
+    {
+      "size": "20x20",
+      "idiom": "ipad",
+      "filename": "Icon-Notification-iPad_40.png",
+      "scale": "2x"
+    },
+    {
+      "size": "29x29",
+      "idiom": "ipad",
+      "filename": "Icon-Settings-iPad_29.png",
+      "scale": "1x"
+    },
+    {
+      "size": "29x29",
+      "idiom": "ipad",
+      "filename": "Icon-Settings-iPad_58.png",
+      "scale": "2x"
+    },
+    {
+      "size": "40x40",
+      "idiom": "ipad",
+      "filename": "Icon-Spotlight-iPad_40.png",
+      "scale": "1x"
+    },
+    {
+      "size": "40x40",
+      "idiom": "ipad",
+      "filename": "Icon-Spotlight-iPad_80.png",
+      "scale": "2x"
+    },
+    {
+      "size": "76x76",
+      "idiom": "ipad",
+      "filename": "Icon-App-iPad_76.png",
+      "scale": "1x"
+    },
+    {
+      "size": "76x76",
+      "idiom": "ipad",
+      "filename": "Icon-App-iPad_152.png",
+      "scale": "2x"
+    },
+    {
+      "size": "83.5x83.5",
+      "idiom": "ipad",
+      "filename": "Icon-App-iPadPro_167.png",
+      "scale": "2x"
+    },
+    {
+      "size": "1024x1024",
+      "idiom": "ios-marketing",
+      "filename": "Icon-AppStore_1024.png",
+      "scale": "1x"
+    }
+  ],
+  "info": {
+    "version": 1,
+    "author": "xcode"
+  }
+}

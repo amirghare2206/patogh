@@ -56,13 +56,21 @@ class PlatformServices {
   }
 
   static Future<void> requestOtp(String phone) async {
-    if (!AppConfig.useSupabase) return;
+    if (!AppConfig.useSupabase) {
+      if (AppConfig.isProduction) {
+        throw StateError('AUTH_BACKEND_NOT_CONFIGURED');
+      }
+      return;
+    }
     if (AppConfig.useStagingAnonymousAuth) return;
     await _supabase!.auth.signInWithOtp(phone: normalizeIranPhone(phone));
   }
 
   static Future<void> verifyOtp(String phone, String code) async {
     if (!AppConfig.useSupabase) {
+      if (AppConfig.isProduction) {
+        throw StateError('AUTH_BACKEND_NOT_CONFIGURED');
+      }
       if (code != '1234') {
         throw Exception('کد آزمایشی صحیح 1234 است.');
       }
@@ -105,8 +113,8 @@ class PlatformServices {
   static Future<void> signOut() async {
     if (!AppConfig.useSupabase) return;
 
-    // در Staging نشست Anonymous را نگه می‌داریم تا ورود دوباره با همان
-    // شماره، همان UID آزمایشی را بازیابی کند.
+    // در Staging نشست Anonymous حفظ می‌شود تا ورود مجدد با همان شماره
+    // همان شناسه آزمایشی را نگه دارد. Production همیشه Sign out واقعی است.
     if (AppConfig.useStagingAnonymousAuth) return;
 
     await _supabase!.auth.signOut();
@@ -329,6 +337,53 @@ class PlatformServices {
       url: body['payment_url'] as String?,
       reference: body['reference'] as String?,
     );
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchBannersV13() async {
+    if (!AppConfig.useSupabase) return const [];
+    final rows = await _supabase!
+        .from('banners')
+        .select(
+          'id,title,subtitle,media_url,action_label,sponsored,audience_rules,priority,banner_placements(placement)',
+        )
+        .eq('active', true)
+        .order('priority', ascending: false);
+    return (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+  }
+
+  static Future<String?> saveBannerV13({
+    required String title,
+    required String subtitle,
+    required String placement,
+    required String audience,
+    required bool sponsored,
+    String? imageUrl,
+  }) async {
+    if (!AppConfig.useSupabase) return null;
+    final row = await _supabase!
+        .from('banners')
+        .insert({
+          'title': title,
+          'subtitle': subtitle,
+          'media_url': imageUrl?.trim().isEmpty == true
+              ? null
+              : imageUrl?.trim(),
+          'action_label': 'مشاهده',
+          'action_type': 'open',
+          'sponsored': sponsored,
+          'audience_rules': {'label': audience},
+          'active': true,
+        })
+        .select('id')
+        .single();
+    final id = '${row['id']}';
+    await _supabase!.from('banner_placements').upsert({
+      'banner_id': id,
+      'placement': placement,
+    });
+    return id;
   }
 
   static Future<List<Map<String, dynamic>>> fetchCategoriesV6() async {

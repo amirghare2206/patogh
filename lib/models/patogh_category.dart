@@ -8,6 +8,7 @@ class PatoghCategory {
   final int colorValue;
   final int sortOrder;
   final bool isActive;
+  final String? logoUrl;
 
   const PatoghCategory({
     required this.id,
@@ -17,6 +18,7 @@ class PatoghCategory {
     required this.colorValue,
     this.sortOrder = 0,
     this.isActive = true,
+    this.logoUrl,
   });
 
   IconData get icon {
@@ -55,17 +57,22 @@ class PatoghCategory {
   PatoghCategory copyWith({
     String? title,
     String? subtitle,
+    int? iconCodePoint,
+    int? colorValue,
     int? sortOrder,
     bool? isActive,
+    String? logoUrl,
+    bool clearLogoUrl = false,
   }) {
     return PatoghCategory(
       id: id,
       title: title ?? this.title,
       subtitle: subtitle ?? this.subtitle,
-      iconCodePoint: iconCodePoint,
-      colorValue: colorValue,
+      iconCodePoint: iconCodePoint ?? this.iconCodePoint,
+      colorValue: colorValue ?? this.colorValue,
       sortOrder: sortOrder ?? this.sortOrder,
       isActive: isActive ?? this.isActive,
+      logoUrl: clearLogoUrl ? null : (logoUrl ?? this.logoUrl),
     );
   }
 
@@ -77,6 +84,7 @@ class PatoghCategory {
     'colorValue': colorValue,
     'sortOrder': sortOrder,
     'isActive': isActive,
+    'logoUrl': logoUrl,
   };
 
   factory PatoghCategory.fromJson(Map<String, dynamic> map) {
@@ -87,9 +95,12 @@ class PatoghCategory {
       iconCodePoint:
           (map['iconCodePoint'] as num?)?.toInt() ??
           Icons.category_rounded.codePoint,
-      colorValue: (map['colorValue'] as num?)?.toInt() ?? 0xFF5B9DFF,
+      colorValue: (map['colorValue'] as num?)?.toInt() ?? 0xFFFF6B35,
       sortOrder: (map['sortOrder'] as num?)?.toInt() ?? 0,
       isActive: (map['isActive'] as bool?) ?? true,
+      logoUrl: (map['logoUrl'] as String?)?.trim().isEmpty == true
+          ? null
+          : (map['logoUrl'] as String?),
     );
   }
 }
