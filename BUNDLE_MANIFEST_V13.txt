@@ -1,0 +1,45 @@
+Patogh v13 Public Release Overlay — Android + iOS
+
+Key product files:
+- lib/pages/home_page.dart
+- lib/pages/services_hub_page.dart
+- lib/pages/root_shell.dart
+- lib/pages/stories_page.dart
+- lib/pages/admin/category_management_page.dart
+- lib/pages/admin/admin_banner_campaign_page.dart
+- lib/models/patogh_category.dart
+- lib/models/ecosystem_models.dart
+- lib/state/app_state.dart
+- lib/services/platform_services.dart
+- lib/config/app_config.dart
+- lib/theme/patogh_theme.dart
+
+Brand assets:
+- assets/branding/patogh_logo.png
+- assets/branding/app_icon_1024.png
+- assets/branding/splash_public.jpg
+- assets/banners/01_discover_events.jpg
+- assets/banners/02_private_invites.jpg
+- assets/banners/03_memories.jpg
+- assets/banners/04_surprise_golrizon.jpg
+- assets/banners/05_smart_calendar.jpg
+- store_assets/android_play_icon_512.png
+- store_assets/android_feature_graphic_1024x500.jpg
+
+Release tooling:
+- .github/workflows/build-public-android.yml
+- .github/workflows/build-public-ios.yml
+- tool/prepare_public_release.py
+- tool/configure_public_platforms.py
+- tool/public_release_preflight.py
+- install_public_release_v13.sh
+
+Backend:
+- backend/supabase/v13_public_release.sql
+- release_bootstrap_v12.sql updated with category logo_url
+
+Docs:
+- README_PUBLIC_RELEASE_V13_FA.md
+- docs/public_release/PUBLIC_RELEASE_SECRETS_FA.md
+- docs/public_release/PUBLIC_RELEASE_CHECKLIST_FA.md
+- docs/public_release/STORE_METADATA_FA.md

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "695155916854",
+    "project_id": "patogh-production",
+    "storage_bucket": "patogh-production.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:695155916854:android:a9f3d7bc6fed5459431897",
+        "android_client_info": {
+          "package_name": "ir.patogh.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCT6ra8WoOMZwH2FZbNijEjc8BwmIEe-pk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
