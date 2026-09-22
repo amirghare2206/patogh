@@ -1,0 +1,98 @@
+name: Build Public Android Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Flutter versionName+versionCode, e.g. 1.0.0+1'
+        required: true
+        default: '1.0.0+1'
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    env:
+      PROD_SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+      PROD_SUPABASE_ANON_KEY: ${{ secrets.PROD_SUPABASE_ANON_KEY }}
+      PAYMENT_API_BASE_URL: ${{ secrets.PAYMENT_API_BASE_URL }}
+      FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+      FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+      FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
+      FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+      FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+      FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      PATOGH_VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+      - name: Public release preflight
+        run: python3 tool/public_release_preflight.py android
+      - name: Ensure Android platform
+        run: |
+          if [ ! -d android ]; then
+            flutter create . --platforms=android --project-name patogh --org ir.patogh
+          fi
+      - name: Prepare public source
+        run: |
+          python3 tool/prepare_public_release.py
+          python3 tool/configure_android_release.py
+          python3 tool/configure_public_platforms.py
+          flutter pub get
+      - name: Analyze and test
+        run: |
+          flutter analyze
+          flutter test
+      - name: Restore Android signing key
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/patogh-release.jks
+          cat > android/key.properties <<KEYS
+          storePassword=$ANDROID_STORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=patogh-release.jks
+          KEYS
+          python3 tool/configure_android_release.py
+      - name: Build signed APK and AAB
+        run: |
+          COMMON_DEFINES=(
+            --dart-define=PATOGH_MODE=production
+            --dart-define=SUPABASE_URL="$PROD_SUPABASE_URL"
+            --dart-define=SUPABASE_ANON_KEY="$PROD_SUPABASE_ANON_KEY"
+            --dart-define=PAYMENT_API_BASE_URL="$PAYMENT_API_BASE_URL"
+            --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY"
+            --dart-define=FIREBASE_APP_ID="$FIREBASE_APP_ID"
+            --dart-define=FIREBASE_MESSAGING_SENDER_ID="$FIREBASE_MESSAGING_SENDER_ID"
+            --dart-define=FIREBASE_PROJECT_ID="$FIREBASE_PROJECT_ID"
+            --dart-define=FIREBASE_AUTH_DOMAIN="$FIREBASE_AUTH_DOMAIN"
+            --dart-define=FIREBASE_STORAGE_BUCKET="$FIREBASE_STORAGE_BUCKET"
+          )
+          flutter build apk --release --obfuscate --split-debug-info=build/symbols/android "${COMMON_DEFINES[@]}"
+          flutter build appbundle --release --obfuscate --split-debug-info=build/symbols/android "${COMMON_DEFINES[@]}"
+      - name: Verify output
+        run: |
+          test -s build/app/outputs/flutter-apk/app-release.apk
+          test -s build/app/outputs/bundle/release/app-release.aab
+          ls -lh build/app/outputs/flutter-apk/app-release.apk build/app/outputs/bundle/release/app-release.aab
+      - uses: actions/upload-artifact@v4
+        with:
+          name: patogh-public-android-${{ inputs.version }}
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
+            build/symbols/android/**
+          retention-days: 30

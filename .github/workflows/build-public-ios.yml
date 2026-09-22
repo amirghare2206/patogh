@@ -1,0 +1,121 @@
+name: Build Public iOS Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Flutter versionName+versionCode, e.g. 1.0.0+1'
+        required: true
+        default: '1.0.0+1'
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    env:
+      PROD_SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+      PROD_SUPABASE_ANON_KEY: ${{ secrets.PROD_SUPABASE_ANON_KEY }}
+      PAYMENT_API_BASE_URL: ${{ secrets.PAYMENT_API_BASE_URL }}
+      FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+      FIREBASE_APP_ID: ${{ secrets.FIREBASE_IOS_APP_ID }}
+      FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
+      FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+      FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+      FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+      IOS_CERTIFICATE_P12_BASE64: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+      IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+      IOS_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
+      IOS_KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      PATOGH_VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+      - name: Public release preflight
+        run: python3 tool/public_release_preflight.py ios
+      - name: Ensure iOS platform
+        run: |
+          if [ ! -d ios ]; then
+            flutter create . --platforms=ios --project-name patogh --org ir.patogh
+          fi
+      - name: Prepare public source
+        run: |
+          python3 tool/prepare_public_release.py
+          python3 tool/configure_public_platforms.py
+          flutter pub get
+      - name: Analyze and test
+        run: |
+          flutter analyze
+          flutter test
+      - name: Install signing certificate and provisioning profile
+        run: |
+          CERT_PATH="$RUNNER_TEMP/patogh_distribution.p12"
+          PROFILE_PATH="$RUNNER_TEMP/patogh.mobileprovision"
+          KEYCHAIN_PATH="$RUNNER_TEMP/patogh-signing.keychain-db"
+          echo "$IOS_CERTIFICATE_P12_BASE64" | base64 --decode > "$CERT_PATH"
+          echo "$IOS_PROVISION_PROFILE_BASE64" | base64 --decode > "$PROFILE_PATH"
+          security create-keychain -p "$IOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$IOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$IOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$IOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          security cms -D -i "$PROFILE_PATH" > "$RUNNER_TEMP/profile.plist"
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/profile.plist")
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/profile.plist")
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          echo "PROFILE_NAME=$PROFILE_NAME" >> "$GITHUB_ENV"
+          APPLE_TEAM_ID="$APPLE_TEAM_ID" python3 tool/configure_public_platforms.py
+      - name: Create export options
+        run: |
+          cat > ios/ExportOptions.plist <<EOFPLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>teamID</key><string>$APPLE_TEAM_ID</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>ir.patogh.app</key><string>$PROFILE_NAME</string>
+            </dict>
+            <key>stripSwiftSymbols</key><true/>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          EOFPLIST
+      - name: Build signed IPA
+        run: |
+          flutter build ipa --release \
+            --obfuscate \
+            --split-debug-info=build/symbols/ios \
+            --export-options-plist=ios/ExportOptions.plist \
+            --dart-define=PATOGH_MODE=production \
+            --dart-define=SUPABASE_URL="$PROD_SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$PROD_SUPABASE_ANON_KEY" \
+            --dart-define=PAYMENT_API_BASE_URL="$PAYMENT_API_BASE_URL" \
+            --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" \
+            --dart-define=FIREBASE_APP_ID="$FIREBASE_APP_ID" \
+            --dart-define=FIREBASE_MESSAGING_SENDER_ID="$FIREBASE_MESSAGING_SENDER_ID" \
+            --dart-define=FIREBASE_PROJECT_ID="$FIREBASE_PROJECT_ID" \
+            --dart-define=FIREBASE_AUTH_DOMAIN="$FIREBASE_AUTH_DOMAIN" \
+            --dart-define=FIREBASE_STORAGE_BUCKET="$FIREBASE_STORAGE_BUCKET"
+      - name: Verify IPA
+        run: |
+          ls -lh build/ios/ipa/*.ipa
+          test -n "$(find build/ios/ipa -name '*.ipa' -size +1M -print -quit)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: patogh-public-ios-${{ inputs.version }}
+          path: |
+            build/ios/ipa/*.ipa
+            build/symbols/ios/**
+          retention-days: 30
