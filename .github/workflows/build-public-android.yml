@@ -85,7 +85,7 @@ jobs:
           KEYS
 
           python3 tool/configure_android_release.py
-
+          echo "RESTORE FINISHED"
       - name: Build signed APK and AAB
         run: |
           COMMON_DEFINES=(
