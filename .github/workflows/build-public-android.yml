@@ -35,17 +35,14 @@ jobs:
       PATOGH_VERSION: ${{ inputs.version }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.47.4'
           channel: stable
@@ -69,12 +66,12 @@ jobs:
 
       - name: Restore Android signing key
         run: |
-          echo "===== KEYSTORE SECRET LENGTH ====="
+          echo "START RESTORE"
+
           echo -n "$ANDROID_KEYSTORE_BASE64" | wc -c
 
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/patogh-release.jks
 
-          echo "===== KEYSTORE FILE ====="
           ls -lh android/app/patogh-release.jks
 
           cat > android/key.properties <<KEYS
@@ -85,7 +82,9 @@ jobs:
           KEYS
 
           python3 tool/configure_android_release.py
+
           echo "RESTORE FINISHED"
+
       - name: Build signed APK and AAB
         run: |
           COMMON_DEFINES=(
