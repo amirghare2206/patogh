@@ -35,7 +35,6 @@ jobs:
       PATOGH_VERSION: ${{ inputs.version }}
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -70,7 +69,13 @@ jobs:
 
       - name: Restore Android signing key
         run: |
+          echo "===== KEYSTORE SECRET LENGTH ====="
+          echo -n "$ANDROID_KEYSTORE_BASE64" | wc -c
+
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/patogh-release.jks
+
+          echo "===== KEYSTORE FILE ====="
+          ls -lh android/app/patogh-release.jks
 
           cat > android/key.properties <<KEYS
           storePassword=$ANDROID_STORE_PASSWORD
@@ -82,15 +87,7 @@ jobs:
           python3 tool/configure_android_release.py
 
       - name: Build signed APK and AAB
-        shell: bash
         run: |
-          set -o pipefail
-
-          echo "===== STOP GRADLE ====="
-          cd android
-          ./gradlew --stop || true
-          cd ..
-
           COMMON_DEFINES=(
             --dart-define=PATOGH_MODE=production
             --dart-define=SUPABASE_URL="$PROD_SUPABASE_URL"
@@ -104,44 +101,14 @@ jobs:
             --dart-define=FIREBASE_STORAGE_BUCKET="$FIREBASE_STORAGE_BUCKET"
           )
 
-          echo "===== BUILD APK ====="
+          flutter build apk --release --obfuscate --split-debug-info=build/symbols/android "${COMMON_DEFINES[@]}"
 
-          flutter build apk \
-            --release \
-            --verbose \
-            --obfuscate \
-            --split-debug-info=build/symbols/android \
-            "${COMMON_DEFINES[@]}" \
-            2>&1 | tee apk-build.log
-
-          echo "===== BUILD AAB ====="
-
-          flutter build appbundle \
-            --release \
-            --verbose \
-            --obfuscate \
-            --split-debug-info=build/symbols/android \
-            "${COMMON_DEFINES[@]}" \
-            2>&1 | tee aab-build.log
-
-      - name: Upload build logs on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: patogh-build-logs
-          path: |
-            apk-build.log
-            aab-build.log
-            android/.gradle/**
+          flutter build appbundle --release --obfuscate --split-debug-info=build/symbols/android "${COMMON_DEFINES[@]}"
 
       - name: Verify output
         run: |
           test -s build/app/outputs/flutter-apk/app-release.apk
           test -s build/app/outputs/bundle/release/app-release.aab
-
-          ls -lh \
-          build/app/outputs/flutter-apk/app-release.apk \
-          build/app/outputs/bundle/release/app-release.aab
 
       - name: Upload APK and AAB
         uses: actions/upload-artifact@v4
@@ -151,5 +118,3 @@ jobs:
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab
             build/symbols/android
-          retention-days: 30
-          
