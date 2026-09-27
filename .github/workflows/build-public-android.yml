@@ -71,8 +71,6 @@ jobs:
       - name: Restore Android signing key
         run: |
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/patogh-release.jks
-          ls -lh android/app/patogh-release.jks
-          file android/app/patogh-release.jks
 
           cat > android/key.properties <<KEYS
           storePassword=$ANDROID_STORE_PASSWORD
