@@ -1,0 +1,55 @@
+name: Build V13 Test APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-test:
+    runs-on: ubuntu-latest
+
+    env:
+      STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+      STAGING_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+
+      - name: Prepare V13 source
+        run: |
+          python3 tool/prepare_public_release.py
+          python3 tool/configure_android_release.py
+          python3 tool/configure_public_platforms.py
+          flutter pub get
+
+      - name: Analyze and test
+        run: |
+          flutter analyze
+          flutter test
+
+      - name: Build V13 staging APK
+        run: |
+          flutter build apk --release \
+            --dart-define=PATOGH_MODE=staging \
+            --dart-define=SUPABASE_URL="$STAGING_SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$STAGING_SUPABASE_ANON_KEY"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: patogh-v13-test-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
