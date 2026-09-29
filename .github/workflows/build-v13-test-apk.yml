@@ -53,7 +53,7 @@ jobs:
       - name: Build V13 staging APK
         run: |
           flutter build apk --release \
-            --dart-define=PATOGH_MODE=staging \
+            --dart-define=PATOGH_MODE=demo \
             --dart-define=SUPABASE_URL="$STAGING_SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$STAGING_SUPABASE_ANON_KEY" \
             --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" \
