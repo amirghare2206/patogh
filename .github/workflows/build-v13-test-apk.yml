@@ -10,7 +10,7 @@ jobs:
   android-test:
     runs-on: ubuntu-latest
 
-   env:
+         env:
       STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
       STAGING_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
 
@@ -21,7 +21,7 @@ jobs:
       FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
       FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
 
-    steps:
+    steps:git add .github/workflows/build-v13-test-apk.yml
       - uses: actions/checkout@v4
 
       - uses: actions/setup-java@v5
