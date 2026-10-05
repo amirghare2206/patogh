@@ -12,6 +12,7 @@ import 'package:patogh/models/patogh_category.dart';
 import 'package:patogh/models/patogh_event.dart';
 import 'package:patogh/models/role_request.dart';
 import 'package:patogh/models/story_item.dart';
+import 'package:patogh/models/timeline_comment.dart';
 import 'package:patogh/models/timeline_post.dart';
 import 'package:patogh/models/user_profile.dart';
 import 'package:patogh/models/user_role.dart';
@@ -58,6 +59,27 @@ class AppState extends ChangeNotifier {
       likes: 31,
     ),
   ];
+
+  final Map<String, List<TimelineComment>> timelineComments =
+      <String, List<TimelineComment>>{};
+  final Set<String> _timelineActionBusy = <String>{};
+  final Set<String> _timelineCommentsLoading = <String>{};
+  final Set<String> _demoSharedPostIds = <String>{};
+
+  bool timelineLoading = false;
+  String? timelineError;
+
+  bool isTimelineActionBusy(String postId) =>
+      _timelineActionBusy.contains(postId);
+
+  bool areTimelineCommentsLoading(String postId) =>
+      _timelineCommentsLoading.contains(postId);
+
+  List<TimelineComment> commentsForPost(String postId) =>
+      List<TimelineComment>.unmodifiable(
+        timelineComments[postId] ?? const <TimelineComment>[],
+      );
+
 
   final List<StoryItem> stories = <StoryItem>[
     const StoryItem(
@@ -831,6 +853,9 @@ class AppState extends ChangeNotifier {
 
     _loadLocalSets();
     _loadLocalChats();
+    if (!AppConfig.useSupabase) {
+      _loadLocalTimelineV14();
+    }
 
     events
       ..clear()
@@ -1192,29 +1217,51 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> refreshTimelineV14({bool notify = true}) async {
+    if (!AppConfig.useSupabase || !loggedIn) return;
+
+    timelineLoading = true;
+    timelineError = null;
+    if (notify) notifyListeners();
+
+    try {
+      final remoteTimeline = await PlatformServices.fetchTimelineV14();
+      final timeline = <TimelinePost>[];
+      for (final row in remoteTimeline) {
+        timeline.add(
+          TimelinePost(
+            id: '${row['id']}',
+            authorId: row['user_id'] as String?,
+            author: (row['author_name'] as String?) ?? 'کاربر پاتوق',
+            roleLabel: (row['role_label'] as String?) ?? 'شرکت‌کننده',
+            eventTitle: (row['event_title'] as String?) ?? 'پاتوق',
+            text: (row['text'] as String?) ?? '',
+            createdAt: _timelineTime(row['created_at']),
+            likes: (row['likes_count'] as num?)?.toInt() ?? 0,
+            commentsCount: (row['comments_count'] as num?)?.toInt() ?? 0,
+            sharesCount: (row['shares_count'] as num?)?.toInt() ?? 0,
+            likedByMe: (row['liked_by_me'] as bool?) ?? false,
+            savedByMe: (row['saved_by_me'] as bool?) ?? false,
+            media: await MediaService.hydrate(row['media'] as List?),
+          ),
+        );
+      }
+      timelinePosts
+        ..clear()
+        ..addAll(timeline);
+    } catch (error) {
+      timelineError = 'بارگذاری تایم‌لاین انجام نشد: $error';
+      rethrow;
+    } finally {
+      timelineLoading = false;
+      if (notify) notifyListeners();
+    }
+  }
+
   Future<void> refreshSocialV12({bool notify = true}) async {
     if (!AppConfig.useSupabase || !loggedIn) return;
 
-    final remoteTimeline = await PlatformServices.fetchTimelineV6();
-    final timeline = <TimelinePost>[];
-    for (final row in remoteTimeline) {
-      timeline.add(
-        TimelinePost(
-          id: '${row['id']}',
-          authorId: row['user_id'] as String?,
-          author: (row['author_name'] as String?) ?? 'کاربر پاتوق',
-          roleLabel: (row['role_label'] as String?) ?? 'شرکت‌کننده',
-          eventTitle: (row['event_title'] as String?) ?? 'پاتوق',
-          text: (row['text'] as String?) ?? '',
-          createdAt: 'آنلاین',
-          likes: (row['likes_count'] as num?)?.toInt() ?? 0,
-          media: await MediaService.hydrate(row['media'] as List?),
-        ),
-      );
-    }
-    timelinePosts
-      ..clear()
-      ..addAll(timeline);
+    await refreshTimelineV14(notify: false);
 
     final remoteStories = await PlatformServices.fetchStoriesV6();
     final storyList = <StoryItem>[];
@@ -1287,7 +1334,7 @@ class AppState extends ChangeNotifier {
         );
         await PlatformServices.attachMediaToPostV12(postId, uploaded.id, i);
       }
-      await refreshSocialV12();
+      await refreshTimelineV14();
       return;
     }
 
@@ -1299,6 +1346,7 @@ class AppState extends ChangeNotifier {
       0,
       TimelinePost(
         id: 'post-${DateTime.now().microsecondsSinceEpoch}',
+        authorId: 'demo-me',
         author: profile?.name ?? 'کاربر پاتوق',
         roleLabel: role.label,
         eventTitle: eventTitle,
@@ -1307,21 +1355,187 @@ class AppState extends ChangeNotifier {
         media: localMedia,
       ),
     );
+    await _persistLocalTimelineV14();
     notifyListeners();
   }
 
   Future<void> likeTimelinePost(String postId) async {
-    if (AppConfig.useSupabase) {
-      await PlatformServices.toggleTimelineLikeV12(postId);
-      await refreshSocialV12();
-      return;
-    }
-    final index = timelinePosts.indexWhere((post) => post.id == postId);
-    if (index == -1) return;
-    timelinePosts[index] = timelinePosts[index].copyWith(
-      likes: timelinePosts[index].likes + 1,
-    );
+    if (_timelineActionBusy.contains(postId)) return;
+    _timelineActionBusy.add(postId);
+    timelineError = null;
     notifyListeners();
+
+    try {
+      if (AppConfig.useSupabase) {
+        await PlatformServices.toggleTimelineLikeV12(postId);
+        await refreshTimelineV14(notify: false);
+        return;
+      }
+
+      final index = timelinePosts.indexWhere((post) => post.id == postId);
+      if (index == -1) return;
+      final current = timelinePosts[index];
+      final nextLiked = !current.likedByMe;
+      timelinePosts[index] = current.copyWith(
+        likedByMe: nextLiked,
+        likes: (current.likes + (nextLiked ? 1 : -1))
+            .clamp(0, 1 << 30)
+            .toInt(),
+      );
+      await _persistLocalTimelineV14();
+    } catch (error) {
+      timelineError = 'ثبت پسند انجام نشد: $error';
+      rethrow;
+    } finally {
+      _timelineActionBusy.remove(postId);
+      notifyListeners();
+    }
+  }
+
+  Future<bool> toggleTimelineSave(String postId) async {
+    if (_timelineActionBusy.contains(postId)) {
+      final index = timelinePosts.indexWhere((item) => item.id == postId);
+      return index == -1 ? false : timelinePosts[index].savedByMe;
+    }
+
+    _timelineActionBusy.add(postId);
+    timelineError = null;
+    notifyListeners();
+
+    try {
+      final index = timelinePosts.indexWhere((post) => post.id == postId);
+      if (index == -1) return false;
+
+      final nextSaved = AppConfig.useSupabase
+          ? await PlatformServices.toggleTimelineSaveV14(postId)
+          : !timelinePosts[index].savedByMe;
+
+      timelinePosts[index] = timelinePosts[index].copyWith(
+        savedByMe: nextSaved,
+      );
+      if (!AppConfig.useSupabase) await _persistLocalTimelineV14();
+      return nextSaved;
+    } catch (error) {
+      timelineError = 'ذخیره پست انجام نشد: $error';
+      rethrow;
+    } finally {
+      _timelineActionBusy.remove(postId);
+      notifyListeners();
+    }
+  }
+
+  Future<List<TimelineComment>> loadTimelineComments(String postId) async {
+    if (_timelineCommentsLoading.contains(postId)) {
+      return commentsForPost(postId);
+    }
+
+    _timelineCommentsLoading.add(postId);
+    timelineError = null;
+    notifyListeners();
+
+    try {
+      if (AppConfig.useSupabase) {
+        final rows = await PlatformServices.fetchTimelineCommentsV14(postId);
+        timelineComments[postId] = rows
+            .map((row) => TimelineComment.fromMap(row))
+            .toList(growable: true);
+      } else {
+        timelineComments.putIfAbsent(postId, () => <TimelineComment>[]);
+      }
+      return commentsForPost(postId);
+    } catch (error) {
+      timelineError = 'بارگذاری کامنت‌ها انجام نشد: $error';
+      rethrow;
+    } finally {
+      _timelineCommentsLoading.remove(postId);
+      notifyListeners();
+    }
+  }
+
+  Future<void> addTimelineComment(String postId, String text) async {
+    final clean = text.trim();
+    if (clean.isEmpty || clean.length > 2000) {
+      throw ArgumentError('متن کامنت باید بین ۱ تا ۲۰۰۰ نویسه باشد.');
+    }
+    if (_timelineActionBusy.contains(postId)) return;
+
+    _timelineActionBusy.add(postId);
+    timelineError = null;
+    notifyListeners();
+
+    try {
+      if (AppConfig.useSupabase) {
+        await PlatformServices.addTimelineCommentV14(
+          postId: postId,
+          text: clean,
+          authorName: profile?.name ?? 'کاربر پاتوق',
+        );
+        final rows = await PlatformServices.fetchTimelineCommentsV14(postId);
+        timelineComments[postId] = rows
+            .map((row) => TimelineComment.fromMap(row))
+            .toList(growable: true);
+        await refreshTimelineV14(notify: false);
+        return;
+      }
+
+      final comment = TimelineComment(
+        id: 'comment-${DateTime.now().microsecondsSinceEpoch}',
+        postId: postId,
+        authorId: 'demo-me',
+        authorName: profile?.name ?? 'کاربر پاتوق',
+        text: clean,
+        createdAt: DateTime.now().toIso8601String(),
+      );
+      final comments = timelineComments.putIfAbsent(
+        postId,
+        () => <TimelineComment>[],
+      );
+      comments.add(comment);
+
+      final index = timelinePosts.indexWhere((post) => post.id == postId);
+      if (index != -1) {
+        timelinePosts[index] = timelinePosts[index].copyWith(
+          commentsCount: comments.length,
+        );
+      }
+      await _persistLocalTimelineV14();
+    } catch (error) {
+      timelineError = 'ارسال کامنت انجام نشد: $error';
+      rethrow;
+    } finally {
+      _timelineActionBusy.remove(postId);
+      notifyListeners();
+    }
+  }
+
+  Future<void> shareTimelinePost(String postId) async {
+    if (_timelineActionBusy.contains(postId)) return;
+    _timelineActionBusy.add(postId);
+    timelineError = null;
+    notifyListeners();
+
+    try {
+      if (AppConfig.useSupabase) {
+        await PlatformServices.recordTimelineShareV14(postId);
+        await refreshTimelineV14(notify: false);
+        return;
+      }
+
+      final index = timelinePosts.indexWhere((post) => post.id == postId);
+      if (index == -1) return;
+      if (_demoSharedPostIds.add(postId)) {
+        timelinePosts[index] = timelinePosts[index].copyWith(
+          sharesCount: timelinePosts[index].sharesCount + 1,
+        );
+        await _persistLocalTimelineV14();
+      }
+    } catch (error) {
+      timelineError = 'ثبت اشتراک‌گذاری انجام نشد: $error';
+      rethrow;
+    } finally {
+      _timelineActionBusy.remove(postId);
+      notifyListeners();
+    }
   }
 
   Future<void> addStory({
@@ -1940,6 +2154,97 @@ class AppState extends ChangeNotifier {
     }
 
     categories.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+  }
+
+  void _loadLocalTimelineV14() {
+    final postsRaw = _prefs?.getString('timeline_posts_v14');
+    if (postsRaw != null && postsRaw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(postsRaw) as List;
+        final stored = decoded
+            .map(
+              (item) => TimelinePost.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
+            .toList();
+        timelinePosts
+          ..clear()
+          ..addAll(stored);
+      } catch (_) {
+        // Keep baked demo data when an old/corrupt local cache cannot be read.
+      }
+    }
+
+    final commentsRaw = _prefs?.getString('timeline_comments_v14');
+    if (commentsRaw != null && commentsRaw.isNotEmpty) {
+      try {
+        final decoded = Map<String, dynamic>.from(
+          jsonDecode(commentsRaw) as Map,
+        );
+        timelineComments.clear();
+        for (final entry in decoded.entries) {
+          timelineComments[entry.key] = (entry.value as List)
+              .map(
+                (item) => TimelineComment.fromJson(
+                  Map<String, dynamic>.from(item as Map),
+                ),
+              )
+              .toList(growable: true);
+        }
+      } catch (_) {
+        timelineComments.clear();
+      }
+    }
+
+    _demoSharedPostIds
+      ..clear()
+      ..addAll(
+        _prefs?.getStringList('timeline_shared_post_ids_v14') ??
+            const <String>[],
+      );
+  }
+
+  Future<void> _persistLocalTimelineV14() async {
+    if (AppConfig.useSupabase) return;
+    await _prefs?.setString(
+      'timeline_posts_v14',
+      jsonEncode(timelinePosts.map((post) => post.toJson()).toList()),
+    );
+
+    final encodedComments = <String, dynamic>{};
+    for (final entry in timelineComments.entries) {
+      encodedComments[entry.key] = entry.value
+          .map((comment) => comment.toJson())
+          .toList();
+    }
+    await _prefs?.setString(
+      'timeline_comments_v14',
+      jsonEncode(encodedComments),
+    );
+    await _prefs?.setStringList(
+      'timeline_shared_post_ids_v14',
+      _demoSharedPostIds.toList(),
+    );
+  }
+
+  String _timelineTime(dynamic raw) {
+    final value = raw?.toString();
+    if (value == null || value.isEmpty) return 'آنلاین';
+    final parsed = DateTime.tryParse(value);
+    if (parsed == null) return value;
+
+    final now = DateTime.now();
+    final local = parsed.toLocal();
+    final diff = now.difference(local);
+    if (diff.isNegative || diff.inMinutes < 1) return 'همین الان';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} دقیقه پیش';
+    if (diff.inHours < 24) return '${diff.inHours} ساعت پیش';
+    if (diff.inDays < 7) return '${diff.inDays} روز پیش';
+
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    return '${local.year}/$month/$day';
   }
 
   Future<void> _persistRoles() async {

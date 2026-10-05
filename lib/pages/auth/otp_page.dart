@@ -1,6 +1,6 @@
+import 'package:patogh/pages/auth/interests_page.dart';
 import 'package:flutter/material.dart';
 import 'package:patogh/config/app_config.dart';
-import 'package:patogh/pages/auth/profile_setup_page.dart';
 import 'package:patogh/state/app_state.dart';
 
 class OtpPage extends StatefulWidget {
@@ -67,7 +67,7 @@ class _OtpPageState extends State<OtpPage> {
                             if (appState.profile == null) {
                               await Navigator.of(context).pushReplacement(
                                 MaterialPageRoute(
-                                  builder: (_) => const ProfileSetupPage(),
+                                  builder: (_) => const InterestsPage(),
                                 ),
                               );
                             } else {

@@ -36,6 +36,21 @@ class MediaAttachment {
     );
   }
 
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'media_type': switch (kind) {
+      MediaKind.video => 'video',
+      MediaKind.audio => 'audio',
+      MediaKind.image => 'image',
+    },
+    'mime_type': mimeType,
+    'size_bytes': sizeBytes,
+    'duration_ms': durationMs,
+    'storage_path': storagePath,
+    'signed_url': url,
+  };
+
   MediaAttachment copyWith({String? url}) => MediaAttachment(
     id: id,
     kind: kind,

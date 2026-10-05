@@ -1,3 +1,6 @@
+import 'package:patogh/pages/social_hub_page.dart';
+import 'package:patogh/pages/game_page.dart';
+import 'package:patogh/pages/services_hub_page.dart';
 import 'package:flutter/material.dart';
 import 'package:patogh/models/user_role.dart';
 import 'package:patogh/pages/admin/admin_approvals_page.dart';
@@ -7,11 +10,9 @@ import 'package:patogh/pages/admin/engagement_admin_page.dart';
 import 'package:patogh/pages/admin/category_management_page.dart';
 import 'package:patogh/pages/communities_page.dart';
 import 'package:patogh/pages/home_page.dart';
-import 'package:patogh/pages/notifications_page.dart';
 import 'package:patogh/pages/coordinator_dashboard_page.dart';
 import 'package:patogh/pages/organizer_dashboard_page.dart';
 import 'package:patogh/pages/profile_page.dart';
-import 'package:patogh/pages/reservation_page.dart';
 import 'package:patogh/pages/stories_page.dart';
 import 'package:patogh/pages/timeline_page.dart';
 import 'package:patogh/pages/admin/time_engine_admin_page.dart';
@@ -179,23 +180,23 @@ class _RootShellState extends State<RootShell> {
             _NavItem(Icons.person_rounded, 'پروفایل'),
           ],
         );
-      case UserRole.participant:
-        return const _ShellConfig(
-          pages: [
-            HomePage(),
-            ReservationPage(),
-            TimelinePage(),
-            NotificationsPage(),
-            ProfilePage(),
-          ],
-          items: [
-            _NavItem(Icons.home_rounded, 'خانه'),
-            _NavItem(Icons.event_available_rounded, 'رویدادها'),
-            _NavItem(Icons.dynamic_feed_rounded, 'تایم‌لاین'),
-            _NavItem(Icons.notifications_rounded, 'اعلان‌ها'),
-            _NavItem(Icons.person_rounded, 'پروفایل'),
-          ],
-        );
+     case UserRole.participant:
+  return const _ShellConfig(
+    pages: [
+      HomePage(),
+      SocialHubPage(),
+      ServicesHubPage(),
+      GamePage(),
+      ProfilePage(),
+    ],
+    items: [
+      _NavItem(Icons.home_rounded, 'خانه'),
+      _NavItem(Icons.groups_rounded, 'اجتماع'),
+      _NavItem(Icons.apps_rounded, 'سرویس‌ها'),
+      _NavItem(Icons.sports_esports_rounded, 'بازی‌ها'),
+      _NavItem(Icons.person_rounded, 'پروفایل'),
+    ],
+  );
     }
   }
 }

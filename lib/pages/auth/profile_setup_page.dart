@@ -6,7 +6,18 @@ import 'package:patogh/pages/legal_page.dart';
 import 'package:patogh/state/app_state.dart';
 
 class ProfileSetupPage extends StatefulWidget {
-  const ProfileSetupPage({super.key});
+  final List<String> initialInterests;
+  final String personalityType;
+  final String leisureStyle;
+  final List<String> personalityTags;
+
+  const ProfileSetupPage({
+    super.key,
+    this.initialInterests = const [],
+    this.personalityType = '',
+    this.leisureStyle = '',
+    this.personalityTags = const [],
+  });
 
   @override
   State<ProfileSetupPage> createState() => _ProfileSetupPageState();
@@ -18,9 +29,17 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   String province = 'خراسان رضوی';
   String city = 'مشهد';
 
-  final selectedRoles = <UserRole>{UserRole.participant};
-  final selected = <String>{};
-  bool acceptedTerms = false;
+ final selectedRoles = <UserRole>{UserRole.participant};
+final selected = <String>{};
+
+String education = '';
+String maritalStatus = '';
+bool hasChildren = false;
+String militaryStatus = '';
+
+late Set<String> selectedInterests;
+
+bool acceptedTerms = false;
 
   final allInterests = const [
     'کافه',
@@ -36,7 +55,13 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     'کودک و خانواده',
     'داوطلبانه',
   ];
+@override
+void initState() {
+  super.initState();
 
+  selectedInterests = {...widget.initialInterests};
+  selected.addAll(widget.initialInterests);
+}
   @override
   Widget build(BuildContext context) {
     final cities = IranLocations.citiesFor(province);
@@ -205,14 +230,24 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                         final age =
                             int.tryParse(ageController.text.trim()) ?? 25;
                         await appState.saveProfile(
-                          UserProfile(
-                            name: name.isEmpty ? 'کاربر پاتوق' : name,
-                            age: age,
-                            city: city,
-                            interests: selected.toList(),
-                            showAge: true,
-                            allowChat: true,
-                          ),
+      UserProfile(
+  name: name.isEmpty ? 'کاربر پاتوق' : name,
+  age: age,
+  city: city,
+  interests: selected.toList(),
+
+  education: education,
+  maritalStatus: maritalStatus,
+  hasChildren: hasChildren,
+  militaryStatus: militaryStatus,
+
+  personalityType: widget.personalityType,
+  leisureStyle: widget.leisureStyle,
+  personalityTags: widget.personalityTags,
+
+  showAge: true,
+  allowChat: true,
+)
                         );
                         await appState.configureInitialRoles(selectedRoles);
                         await appState.setSelectedLocation(province, city);

@@ -454,12 +454,67 @@ class PlatformServices {
     );
   }
 
-  static Future<List<Map<String, dynamic>>> fetchTimelineV6() async {
+  static Future<List<Map<String, dynamic>>> fetchTimelineV14() async {
     if (!AppConfig.useSupabase) return const [];
-    final rows = await _supabase!.rpc('list_timeline_feed_v12');
+    final rows = await _supabase!.rpc('list_timeline_feed_v14');
     return (rows as List)
         .map((row) => Map<String, dynamic>.from(row as Map))
         .toList();
+  }
+
+  // Compatibility alias for older call sites. V14 feed is now authoritative.
+  static Future<List<Map<String, dynamic>>> fetchTimelineV6() =>
+      fetchTimelineV14();
+
+  static Future<List<Map<String, dynamic>>> fetchTimelineCommentsV14(
+    String postId,
+  ) async {
+    if (!AppConfig.useSupabase) return const [];
+    final rows = await _supabase!.rpc(
+      'list_timeline_comments_v14',
+      params: {'p_post_id': postId},
+    );
+    return (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+  }
+
+  static Future<bool> toggleTimelineSaveV14(String postId) async {
+    if (!AppConfig.useSupabase) return false;
+    final result = await _supabase!.rpc(
+      'toggle_timeline_save_v14',
+      params: {'p_post_id': postId},
+    );
+    return result == true;
+  }
+
+  static Future<String?> addTimelineCommentV14({
+    required String postId,
+    required String text,
+    required String authorName,
+  }) async {
+    if (!AppConfig.useSupabase) return null;
+    final result = await _supabase!.rpc(
+      'add_timeline_comment_v14',
+      params: {
+        'p_post_id': postId,
+        'p_text': text,
+        // The hardened RPC ignores this value for identity and resolves the
+        // display name from public.profiles. It is kept for signature parity.
+        'p_author_name': authorName,
+      },
+    );
+    return result?.toString();
+  }
+
+  static Future<int?> recordTimelineShareV14(String postId) async {
+    if (!AppConfig.useSupabase) return null;
+    final result = await _supabase!.rpc(
+      'record_timeline_share_v14',
+      params: {'p_post_id': postId},
+    );
+    if (result is num) return result.toInt();
+    return int.tryParse('$result');
   }
 
   static Future<String?> createTimelinePostV12({
