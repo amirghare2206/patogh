@@ -26,7 +26,11 @@ class PatoghApp extends StatelessWidget {
         animation: startupState,
         builder: (context, _) {
           if (!startupState.isReady) {
-            return const StartupDiagnosticPage();
+            return StartupDiagnosticPage(
+              key: ValueKey(
+                '${startupState.status.name}|${startupState.stage}|${startupState.errorTitle ?? ''}',
+              ),
+            );
           }
 
           return AnimatedBuilder(
