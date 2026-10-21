@@ -1,0 +1,62 @@
+name: Build V14 Unified QA APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - v14-unified-qa
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout V14 QA source
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+
+      - name: Install Android SDK components
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;36.0.0"
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Build Demo QA APK
+        run: |
+          flutter build apk --debug \
+            --dart-define=PATOGH_MODE=demo \
+            --build-name=1.0.0 \
+            --build-number=140001
+
+      - name: Upload QA APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: patogh-v14-unified-demo-qa
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

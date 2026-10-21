@@ -22,6 +22,7 @@ class PaymentStartResult {
 
 class PlatformServices {
   static bool _initialized = false;
+  static RealtimeChannel? _sharedChangesChannel;
 
   static Future<void> initialize() async {
     if (_initialized) return;
@@ -46,6 +47,53 @@ class PlatformServices {
   static String? get currentUserId => _supabase?.auth.currentUser?.id;
 
   static bool get hasRemoteSession => currentUserId != null;
+
+  /// Subscribe to shared Staging/Production tables so other installations see
+  /// remote changes without requiring a manual pull-to-refresh.
+  static Future<void> subscribeToSharedData(void Function() onChange) async {
+    final client = _supabase;
+    if (client == null) return;
+    await _sharedChangesChannel?.unsubscribe();
+    final channel = client.channel('patogh-shared-data-${currentUserId ?? 'guest'}');
+    const tables = <String>[
+      'patogh_events',
+      'reservations',
+      'timeline_posts',
+      'timeline_likes',
+      'timeline_post_media',
+      'timeline_comments',
+      'timeline_saved_posts',
+      'timeline_shares',
+      'stories',
+      'story_media',
+      'communities',
+      'community_members',
+      'chat_messages',
+      'notifications',
+      'profiles',
+      'user_roles',
+      'role_requests',
+      'game_rooms',
+      'game_room_players',
+      'game_room_states',
+    ];
+    for (final table in tables) {
+      channel.onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: table,
+        callback: (_) => onChange(),
+      );
+    }
+    _sharedChangesChannel = channel;
+    channel.subscribe();
+  }
+
+  static Future<void> unsubscribeFromSharedData() async {
+    final channel = _sharedChangesChannel;
+    _sharedChangesChannel = null;
+    if (channel != null) await channel.unsubscribe();
+  }
 
   static String normalizeIranPhone(String input) {
     final phone = input.replaceAll(' ', '').replaceAll('-', '');
@@ -140,6 +188,18 @@ class PlatformServices {
       interests: List<String>.from(
         (row['interests'] as List?) ?? const <String>[],
       ),
+      education: (row['education'] as String?) ?? '',
+      maritalStatus: (row['marital_status'] as String?) ?? '',
+      hasChildren: row['has_children'] as bool?,
+      militaryStatus: (row['military_status'] as String?) ?? '',
+      personalityType: (row['personality_type'] as String?) ?? '',
+      leisureStyle: (row['leisure_style'] as String?) ?? '',
+      personalityTags: List<String>.from(
+        (row['personality_tags'] as List?) ?? const <String>[],
+      ),
+      personalityAnswers: Map<String, String>.from(
+        (row['personality_answers'] as Map?) ?? const <String, String>{},
+      ),
       showAge: (row['show_age'] as bool?) ?? true,
       allowChat: (row['allow_chat'] as bool?) ?? true,
       role: UserRoleX.fromKey(row['role'] as String?),
@@ -161,14 +221,94 @@ class PlatformServices {
       'age': profile.age,
       'city': profile.city,
       'interests': profile.interests,
+      'education': profile.education,
+      'marital_status': profile.maritalStatus,
+      'has_children': profile.hasChildren,
+      'military_status': profile.militaryStatus,
+      'personality_type': profile.personalityType,
+      'leisure_style': profile.leisureStyle,
+      'personality_tags': profile.personalityTags,
+      'personality_answers': profile.personalityAnswers,
       'show_age': profile.showAge,
       'allow_chat': profile.allowChat,
       'role': profile.role.key,
       'onboarding_completed': true,
       'terms_accepted_at': DateTime.now().toIso8601String(),
-      'terms_version': 'v12-1',
-      'privacy_version': 'v12-1',
+      'terms_version': 'v14-1',
+      'privacy_version': 'v14-1',
     });
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchSuggestedProfilesV14({int limit = 20}) async {
+    if (!AppConfig.useSupabase || currentUserId == null) return const [];
+    final rows = await _supabase!.rpc(
+      'list_suggested_profiles_v14',
+      params: {'p_limit': limit.clamp(1, 50)},
+    );
+    return (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchGameRoomsV14({required String gameType}) async {
+    if (!AppConfig.useSupabase || currentUserId == null) return const [];
+    final rows = await _supabase!.rpc('list_game_rooms_v14', params: {'p_game_type': gameType});
+    return (rows as List).map((row) => Map<String, dynamic>.from(row as Map)).toList();
+  }
+
+  static Future<Map<String, dynamic>> createGameRoomV14({
+    required String gameType,
+    required int maxPlayers,
+    required bool isPrivate,
+  }) async {
+    if (!AppConfig.useSupabase || currentUserId == null) {
+      throw StateError('برای ساخت اتاق مشترک، ورود به Staging لازم است.');
+    }
+    final row = await _supabase!.rpc('create_game_room_v14', params: {
+      'p_game_type': gameType,
+      'p_max_players': maxPlayers,
+      'p_is_private': isPrivate,
+    });
+    return Map<String, dynamic>.from(row as Map);
+  }
+
+  static Future<Map<String, dynamic>> joinGameRoomV14(String roomCode) async {
+    if (!AppConfig.useSupabase || currentUserId == null) {
+      throw StateError('برای ورود به اتاق مشترک، ورود به Staging لازم است.');
+    }
+    final row = await _supabase!.rpc('join_game_room_v14', params: {'p_room_code': roomCode.trim()});
+    return Map<String, dynamic>.from(row as Map);
+  }
+
+  static Future<bool> leaveGameRoomV14(String roomId) async {
+    if (!AppConfig.useSupabase || currentUserId == null) return false;
+    final result = await _supabase!.rpc('leave_game_room_v14', params: {'p_room_id': roomId});
+    return result == true;
+  }
+
+  static Future<Map<String, dynamic>> getGameStateV14(String roomCode) async {
+    if (!AppConfig.useSupabase || currentUserId == null) {
+      throw StateError('برای دریافت وضعیت بازی باید به Staging وارد شده باشی.');
+    }
+    final result = await _supabase!.rpc(
+      'get_game_state_v14',
+      params: {'p_room_code': roomCode.trim()},
+    );
+    return Map<String, dynamic>.from(result as Map);
+  }
+
+  static Future<Map<String, dynamic>> submitGameActionV14({
+    required String roomCode,
+    required Map<String, dynamic> action,
+  }) async {
+    if (!AppConfig.useSupabase || currentUserId == null) {
+      throw StateError('برای حرکت در بازی باید به Staging وارد شده باشی.');
+    }
+    final result = await _supabase!.rpc(
+      'submit_game_action_v14',
+      params: {'p_room_code': roomCode.trim(), 'p_action': action},
+    );
+    return Map<String, dynamic>.from(result as Map);
   }
 
   static Future<List<PatoghEvent>> fetchEvents() async {

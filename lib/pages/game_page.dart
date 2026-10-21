@@ -124,7 +124,7 @@ class GamePage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '🎮 رقابت آنلاین',
+                        '🎮 اتاق‌های بازی',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 21,
@@ -133,7 +133,7 @@ class GamePage extends StatelessWidget {
                       ),
                       SizedBox(height: 7),
                       Text(
-                        'نسخه V14 برای اتاق بازی، دعوت دوستان و رقابت آنلاین آماده می‌شود.',
+                        'اتاق‌های مشترک و دعوت با کد در حال آماده‌سازی‌اند؛ موتور اجرای قوانین هر بازی هنوز تکمیل نشده است.',
                         style: TextStyle(
                           color: Colors.white,
                           height: 1.5,

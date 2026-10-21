@@ -104,7 +104,7 @@ class _AiConciergePageState extends State<AiConciergePage> {
                       style: const TextStyle(fontWeight: FontWeight.w900),
                     ),
                     subtitle: Text(
-                      '${event.area} • ${event.date} • ${appState.matchScore(event.tags)}٪ سازگاری',
+                      '${event.area} • ${event.date} • ${appState.matchScore(event.tags)} علاقه مشترک',
                     ),
                     trailing: const Icon(Icons.chevron_left_rounded),
                   ),

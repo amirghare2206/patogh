@@ -9,10 +9,22 @@ create table if not exists public.profiles (
   age int,
   city text not null default 'مشهد',
   interests text[] not null default '{}',
+  education text not null default '',
+  marital_status text not null default '',
+  has_children boolean,
+  military_status text not null default '',
+  personality_type text not null default '',
+  leisure_style text not null default '',
+  personality_tags text[] not null default '{}',
+  personality_answers jsonb not null default '{}'::jsonb,
   show_age boolean not null default true,
   allow_chat boolean not null default true,
   role text not null default 'user'
     check (role in ('user','host','admin')),
+  onboarding_completed boolean not null default false,
+  terms_accepted_at timestamptz,
+  terms_version text,
+  privacy_version text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

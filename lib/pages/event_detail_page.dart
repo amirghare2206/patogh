@@ -53,7 +53,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
                     Positioned(
                       right: 16,
                       top: 16,
-                      child: Chip(label: Text('سازگاری $score٪')),
+                      child: Chip(label: Text('علایق مشترک: $score مورد')),
                     ),
                     if (policy.sponsored)
                       const Positioned(

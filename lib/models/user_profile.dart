@@ -9,12 +9,13 @@ class UserProfile {
 
   final String education;
   final String maritalStatus;
-  final bool hasChildren;
+  final bool? hasChildren;
   final String militaryStatus;
 
   final String personalityType;
   final String leisureStyle;
   final List<String> personalityTags;
+  final Map<String, String> personalityAnswers;
 
   final bool showAge;
   final bool allowChat;
@@ -29,11 +30,12 @@ class UserProfile {
     required this.allowChat,
     this.education = '',
     this.maritalStatus = '',
-    this.hasChildren = false,
+    this.hasChildren,
     this.militaryStatus = '',
     this.personalityType = '',
     this.leisureStyle = '',
     this.personalityTags = const [],
+    this.personalityAnswers = const {},
     this.role = UserRole.participant,
   });
 
@@ -49,6 +51,7 @@ class UserProfile {
     String? personalityType,
     String? leisureStyle,
     List<String>? personalityTags,
+    Map<String, String>? personalityAnswers,
     bool? showAge,
     bool? allowChat,
     UserRole? role,
@@ -65,6 +68,7 @@ class UserProfile {
       personalityType: personalityType ?? this.personalityType,
       leisureStyle: leisureStyle ?? this.leisureStyle,
       personalityTags: personalityTags ?? this.personalityTags,
+      personalityAnswers: personalityAnswers ?? this.personalityAnswers,
       showAge: showAge ?? this.showAge,
       allowChat: allowChat ?? this.allowChat,
       role: role ?? this.role,
@@ -83,6 +87,7 @@ class UserProfile {
         'personalityType': personalityType,
         'leisureStyle': leisureStyle,
         'personalityTags': personalityTags,
+        'personalityAnswers': personalityAnswers,
         'showAge': showAge,
         'allowChat': allowChat,
         'role': role.key,
@@ -98,12 +103,15 @@ class UserProfile {
       ),
       education: (json['education'] as String?) ?? '',
       maritalStatus: (json['maritalStatus'] as String?) ?? '',
-      hasChildren: (json['hasChildren'] as bool?) ?? false,
+      hasChildren: json['hasChildren'] as bool?,
       militaryStatus: (json['militaryStatus'] as String?) ?? '',
       personalityType: (json['personalityType'] as String?) ?? '',
       leisureStyle: (json['leisureStyle'] as String?) ?? '',
       personalityTags: List<String>.from(
         (json['personalityTags'] as List?) ?? const [],
+      ),
+      personalityAnswers: Map<String, String>.from(
+        (json['personalityAnswers'] as Map?) ?? const <String, String>{},
       ),
       showAge: (json['showAge'] as bool?) ?? true,
       allowChat: (json['allowChat'] as bool?) ?? true,

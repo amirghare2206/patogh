@@ -10,6 +10,7 @@ class ProfileSetupPage extends StatefulWidget {
   final String personalityType;
   final String leisureStyle;
   final List<String> personalityTags;
+  final Map<String, String> personalityAnswers;
 
   const ProfileSetupPage({
     super.key,
@@ -17,6 +18,7 @@ class ProfileSetupPage extends StatefulWidget {
     this.personalityType = '',
     this.leisureStyle = '',
     this.personalityTags = const [],
+    this.personalityAnswers = const {},
   });
 
   @override
@@ -29,39 +31,36 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   String province = 'خراسان رضوی';
   String city = 'مشهد';
 
- final selectedRoles = <UserRole>{UserRole.participant};
-final selected = <String>{};
+  final selectedRoles = <UserRole>{UserRole.participant};
+  final selected = <String>{};
 
-String education = '';
-String maritalStatus = '';
-bool hasChildren = false;
-String militaryStatus = '';
-
-late Set<String> selectedInterests;
-
-bool acceptedTerms = false;
+  String education = '';
+  String maritalStatus = '';
+  String childrenStatus = '';
+  String militaryStatus = '';
+  bool acceptedTerms = false;
 
   final allInterests = const [
-    'کافه',
-    'گفت‌وگو',
-    'کتاب',
-    'بازی',
-    'ورزش',
-    'سفر',
-    'کار',
-    'فناوری',
-    'فیلم',
-    'هنر',
-    'کودک و خانواده',
-    'داوطلبانه',
+    'کافه و دورهمی', 'گفت‌وگو', 'کتاب و ادبیات', 'بازی', 'ورزش',
+    'سفر و طبیعت', 'فناوری', 'فیلم و سینما', 'هنر', 'خانواده',
+    'داوطلبانه', 'غذا و آشپزی', 'عکاسی', 'موسیقی', 'همدلی', 'فکری',
+    'کاری', 'آموزشی', 'محیط زیست', 'حیوانات', 'سلامت و آرامش',
+    'ساخت و مهارت', 'زبان‌آموزی', 'کشف شهر', 'تئاتر و اجرا',
+    'کارآفرینی', 'سبک زندگی', 'بازی فکری',
   ];
-@override
-void initState() {
-  super.initState();
 
-  selectedInterests = {...widget.initialInterests};
-  selected.addAll(widget.initialInterests);
-}
+  @override
+  void initState() {
+    super.initState();
+    selected.addAll(widget.initialInterests);
+  }
+  @override
+  void dispose() {
+    nameController.dispose();
+    ageController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final cities = IranLocations.citiesFor(province);
@@ -117,6 +116,70 @@ void initState() {
                   if (value != null) setState(() => city = value);
                 },
                 decoration: const InputDecoration(labelText: 'شهر'),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'اطلاعات تکمیلی (اختیاری)',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'این اطلاعات برای پیشنهاد مرتبط‌تر استفاده می‌شود. می‌توانی هر مورد را بی‌پاسخ بگذاری.',
+                style: TextStyle(color: Color(0xFF999999), fontSize: 11, height: 1.6),
+              ),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                initialValue: education,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'تحصیلات (اختیاری)'),
+                items: const [
+                  DropdownMenuItem(value: '', child: Text('ترجیح می‌دهم نگویم')),
+                  DropdownMenuItem(value: 'دیپلم', child: Text('دیپلم')),
+                  DropdownMenuItem(value: 'کاردانی', child: Text('کاردانی')),
+                  DropdownMenuItem(value: 'کارشناسی', child: Text('کارشناسی')),
+                  DropdownMenuItem(value: 'کارشناسی ارشد', child: Text('کارشناسی ارشد')),
+                  DropdownMenuItem(value: 'دکتری', child: Text('دکتری')),
+                ],
+                onChanged: (value) => setState(() => education = value ?? ''),
+              ),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                initialValue: maritalStatus,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'وضعیت تأهل (اختیاری)'),
+                items: const [
+                  DropdownMenuItem(value: '', child: Text('ترجیح می‌دهم نگویم')),
+                  DropdownMenuItem(value: 'مجرد', child: Text('مجرد')),
+                  DropdownMenuItem(value: 'متأهل', child: Text('متأهل')),
+                  DropdownMenuItem(value: 'سایر', child: Text('سایر')),
+                ],
+                onChanged: (value) => setState(() => maritalStatus = value ?? ''),
+              ),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                initialValue: childrenStatus,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'وضعیت فرزند (اختیاری)'),
+                items: const [
+                  DropdownMenuItem(value: '', child: Text('ترجیح می‌دهم نگویم')),
+                  DropdownMenuItem(value: 'بله', child: Text('فرزند دارم')),
+                  DropdownMenuItem(value: 'خیر', child: Text('فرزند ندارم')),
+                ],
+                onChanged: (value) => setState(() => childrenStatus = value ?? ''),
+              ),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                initialValue: militaryStatus,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'وضعیت سربازی (اختیاری)'),
+                items: const [
+                  DropdownMenuItem(value: '', child: Text('ترجیح می‌دهم نگویم / شامل من نمی‌شود')),
+                  DropdownMenuItem(value: 'انجام شده', child: Text('انجام شده')),
+                  DropdownMenuItem(value: 'معاف', child: Text('معاف')),
+                  DropdownMenuItem(value: 'در حال انجام', child: Text('در حال انجام')),
+                  DropdownMenuItem(value: 'مشمول', child: Text('مشمول')),
+                ],
+                onChanged: (value) => setState(() => militaryStatus = value ?? ''),
               ),
               const SizedBox(height: 18),
               const Text(
@@ -238,12 +301,13 @@ void initState() {
 
   education: education,
   maritalStatus: maritalStatus,
-  hasChildren: hasChildren,
+  hasChildren: childrenStatus.isEmpty ? null : childrenStatus == 'بله',
   militaryStatus: militaryStatus,
 
   personalityType: widget.personalityType,
   leisureStyle: widget.leisureStyle,
   personalityTags: widget.personalityTags,
+  personalityAnswers: widget.personalityAnswers,
 
   showAge: true,
   allowChat: true,

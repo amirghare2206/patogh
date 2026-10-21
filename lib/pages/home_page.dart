@@ -13,7 +13,10 @@ import 'package:patogh/pages/surprise_page.dart';
 import 'package:patogh/pages/time_occasion_hub_page.dart';
 import 'package:patogh/state/app_state.dart';
 import 'package:patogh/theme/patogh_theme.dart';
-import 'package:patogh/pages/event_detail_page.dart';
+import 'package:patogh/pages/profile_page.dart';
+import 'package:patogh/pages/category_events_page.dart';
+import 'package:patogh/models/patogh_category.dart';
+import 'package:patogh/data/mock_data.dart' as mock;
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -80,11 +83,7 @@ class _HomePageState extends State<HomePage> {
                   _bannerCarousel(context, banners),
                 ],
               const SizedBox(height: 22),
-_eventsHeader(context),
-const SizedBox(height: 14),
-_eventCategories(context),
-const SizedBox(height: 28),
-_personalizedSuggestions(context),
+                _serviceCategories(context),
               ],
             ),
           );
@@ -151,6 +150,20 @@ Widget _header(BuildContext context) {
                 ),
               ),
             ],
+          ),
+        ),
+
+        Positioned(
+          right: 0,
+          top: 8,
+          child: IconButton.filledTonal(
+            tooltip: 'پروفایل من',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ProfilePage()),
+              );
+            },
+            icon: const Icon(Icons.person_rounded),
           ),
         ),
 
@@ -539,351 +552,116 @@ Widget _header(BuildContext context) {
     );
   }
 
-  Widget _eventsHeader(BuildContext context) {
-    return Row(
+  Widget _serviceCategories(BuildContext context) {
+    // ترتیب مطابق تصویر مرجع کاربر: از راست به چپ و ردیف‌به‌ردیف.
+    const desiredOrder = <String>[
+      'companion', 'volunteer', 'empathy',
+      'story', 'sport', 'think',
+      'travel', 'learn', 'work',
+      'game', 'talk', 'intro',
+    ];
+    // Always retain the twelve baseline categories shown in the approved
+    // reference; active server categories override their display metadata.
+    final byId = <String, PatoghCategory>{
+      for (final category in mock.categories) category.id: category,
+      for (final category in appState.categories)
+        if (category.isActive) category.id: category,
+    };
+    final ordered = <PatoghCategory>[];
+    for (final id in desiredOrder) {
+      final category = byId.remove(id);
+      if (category != null) ordered.add(category);
+    }
+    // Custom categories remain available after the twelve reference categories.
+    ordered.addAll(byId.values.toList()
+      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'رویدادها',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
-              ),
-              Text(
-                'اصل ماجرا از همین‌جا شروع می‌شود',
-                style: TextStyle(color: PatoghTheme.muted, fontSize: 10.5),
-              ),
-            ],
-          ),
+        const Text(
+          'پاتوق‌ها',
+          textAlign: TextAlign.right,
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
         ),
-        OutlinedButton.icon(
-          onPressed: () => Navigator.of(context)
-              .push(MaterialPageRoute(builder: (_) => const ReservationPage())),
-          icon: const Icon(Icons.tune_rounded, size: 18),
-          label: const Text('جست‌وجو و فیلتر'),
+        const SizedBox(height: 5),
+        const Text(
+          'برای پیدا کردن جمع و تجربه‌ای که دوست داری، یک دسته را انتخاب کن.',
+          textAlign: TextAlign.right,
+          style: TextStyle(color: PatoghTheme.muted, fontSize: 11, height: 1.6),
+        ),
+        const SizedBox(height: 15),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: ordered.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 0.82,
+          ),
+          itemBuilder: (context, index) {
+            final category = ordered[index];
+            final color = category.accent;
+            return Material(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => CategoryEventsPage(category: category),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 54,
+                        height: 54,
+                        decoration: BoxDecoration(
+                          color: color.withAlpha(28),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Icon(category.icon, color: color, size: 30),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        category.title,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF171717),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        category.subtitle,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF777777),
+                          fontSize: 8,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ],
     );
   }
-
-
-
-
- Widget _eventCategories(BuildContext context) {
-  final categories = appState.categories
-      .where((category) => category.isActive)
-      .toList();
-
-  if (categories.isEmpty) {
-    return const SizedBox.shrink();
-  }
-
-  return SizedBox(
-    height: 132,
-    child: ListView.separated(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      itemCount: categories.length,
-      separatorBuilder: (_, _) => const SizedBox(width: 12),
-      itemBuilder: (context, index) {
-        final category = categories[index];
-
-        return InkWell(
-          borderRadius: BorderRadius.circular(26),
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const ReservationPage(),
-              ),
-            );
-          },
-          child: Container(
-            width: 98,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 12,
-            ),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-                colors: [
-                  category.accent.withAlpha(70),
-                  category.accent.withAlpha(22),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(26),
-              border: Border.all(
-                color: category.accent.withAlpha(110),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: category.accent.withAlpha(30),
-                  blurRadius: 14,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: category.accent.withAlpha(45),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    category.icon,
-                    color: category.accent,
-                    size: 30,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  category.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 11.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    ),
-  );
-}
-Widget _personalizedSuggestions(BuildContext context) {
-  final suggestions = [...appState.events]
-    ..sort(
-      (a, b) => appState
-          .matchScore(b.tags)
-          .compareTo(appState.matchScore(a.tags)),
-    );
-
-  final visibleSuggestions = suggestions.take(6).toList();
-  final interests = appState.profile?.interests ?? const <String>[];
-
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'پیشنهاد برای تو ✨',
-                  style: TextStyle(
-                    fontSize: 21,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  interests.isEmpty
-                      ? 'چند پیشنهاد جذاب برای شروع'
-                      : 'بر اساس چیزهایی که دوست داری',
-                  style: const TextStyle(
-                    color: PatoghTheme.muted,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const ReservationPage(),
-                ),
-              );
-            },
-            child: const Text('همه رویدادها'),
-          ),
-        ],
-      ),
-      const SizedBox(height: 12),
-
-      if (visibleSuggestions.isEmpty)
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: PatoghTheme.brandGradient,
-            borderRadius: BorderRadius.circular(26),
-          ),
-          child: const Row(
-            children: [
-              Icon(
-                Icons.explore_rounded,
-                color: Colors.white,
-                size: 34,
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'رویدادهای تازه پاتوق به‌زودی اینجا ظاهر می‌شوند.',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        )
-      else
-        SizedBox(
-          height: 188,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: visibleSuggestions.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final event = visibleSuggestions[index];
-              final score = appState.matchScore(event.tags);
-
-              return InkWell(
-                borderRadius: BorderRadius.circular(26),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => EventDetailPage(event: event),
-                    ),
-                  );
-                },
-                child: Container(
-                  width: 205,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topRight,
-                      end: Alignment.bottomLeft,
-                      colors: event.gradient,
-                    ),
-                    borderRadius: BorderRadius.circular(26),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(28),
-                        blurRadius: 14,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 43,
-                            height: 43,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(32),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              event.icon,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                          const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(35),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Text(
-                              '$score٪ تطابق',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Text(
-                        event.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      const SizedBox(height: 7),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.calendar_month_rounded,
-                            color: Colors.white70,
-                            size: 15,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              '${event.date} • ${event.time}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on_rounded,
-                            color: Colors.white70,
-                            size: 15,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              event.area,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-    ],
-  );
-}
 
   void _openBanner(BuildContext context, BannerItem banner) {
     final page = switch (banner.id) {

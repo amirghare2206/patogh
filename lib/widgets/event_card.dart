@@ -76,7 +76,7 @@ class EventCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            'سازگاری $match٪',
+                            'علایق مشترک: $match',
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w900,

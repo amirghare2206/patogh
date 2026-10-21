@@ -13,20 +13,34 @@ class _InterestsPageState extends State<InterestsPage> {
   final Set<String> selected = {};
 
   final interests = const [
-    ('☕', 'کافه'),
-    ('💬', 'گفت‌وگو'),
-    ('📚', 'کتاب'),
-    ('🎮', 'بازی'),
-    ('🏃', 'ورزش'),
-    ('🏕', 'سفر و طبیعت'),
-    ('💻', 'فناوری'),
-    ('🎬', 'فیلم'),
-    ('🎨', 'هنر'),
-    ('👨‍👩‍👧', 'کودک و خانواده'),
-    ('🤝', 'داوطلبانه'),
-    ('🍔', 'غذا'),
-    ('📸', 'عکاسی'),
-    ('🎵', 'موسیقی'),
+    ('☕', 'کافه و دورهمی', 'قرارهای دوستانه'),
+    ('💬', 'گفت‌وگو', 'گپ صمیمی و موضوعی'),
+    ('📚', 'کتاب و ادبیات', 'کتاب‌خوانی و قصه'),
+    ('🎮', 'بازی', 'بازی‌های گروهی'),
+    ('🏀', 'ورزش', 'تحرک و مسابقه'),
+    ('🏕️', 'سفر و طبیعت', 'گشت و تجربه تازه'),
+    ('💻', 'فناوری', 'تکنولوژی و نوآوری'),
+    ('🎬', 'فیلم و سینما', 'تماشا و نقد'),
+    ('🎨', 'هنر', 'هنر و خلاقیت'),
+    ('👨‍👩‍👧', 'خانواده', 'فعالیت خانوادگی'),
+    ('🤝', 'داوطلبانه', 'کمک و کار اجتماعی'),
+    ('🍲', 'غذا و آشپزی', 'مزه‌ها و تجربه‌ها'),
+    ('📸', 'عکاسی', 'ثبت لحظه‌ها'),
+    ('🎵', 'موسیقی', 'موسیقی و اجرا'),
+    ('💗', 'همدلی', 'حمایت و شنیدن'),
+    ('🧠', 'فکری', 'ایده و بحث عمیق'),
+    ('🧑‍💼', 'کاری', 'شبکه‌سازی حرفه‌ای'),
+    ('🎓', 'آموزشی', 'یادگیری و کارگاه'),
+    ('🌱', 'محیط زیست', 'طبیعت و پایداری'),
+    ('🐾', 'حیوانات', 'حمایت از حیوانات'),
+    ('🧘', 'سلامت و آرامش', 'ذهن‌آگاهی و تعادل'),
+    ('🛠️', 'ساخت و مهارت', 'کارهای عملی'),
+    ('🗣️', 'زبان‌آموزی', 'تمرین زبان'),
+    ('🌆', 'کشف شهر', 'محله‌گردی و مکان‌ها'),
+    ('🎭', 'تئاتر و اجرا', 'هنرهای نمایشی'),
+    ('💡', 'کارآفرینی', 'ایده و کسب‌وکار'),
+    ('🍃', 'سبک زندگی', 'عادت‌های بهتر'),
+    ('🎲', 'بازی فکری', 'معما و تخته‌ای'),
   ];
 
   @override
@@ -46,51 +60,62 @@ class _InterestsPageState extends State<InterestsPage> {
             ),
           ),
           const SizedBox(height: 22),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: interests.map((item) {
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: interests.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 1.38,
+            ),
+            itemBuilder: (context, index) {
+              final item = interests[index];
               final active = selected.contains(item.$2);
-
-              return InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () {
-                  setState(() {
+              return Material(
+                color: active ? PatoghTheme.orange.withAlpha(35) : PatoghTheme.surface2,
+                borderRadius: BorderRadius.circular(18),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: () => setState(() {
                     if (active) {
                       selected.remove(item.$2);
                     } else {
                       selected.add(item.$2);
                     }
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: active
-                        ? PatoghTheme.orange.withAlpha(55)
-                        : PatoghTheme.surface2,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: active
-                          ? PatoghTheme.orange
-                          : const Color(0xFF3C426D),
+                  }),
+                  child: Container(
+                    padding: const EdgeInsets.all(11),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: active ? PatoghTheme.orange : const Color(0xFF3C426D)),
                     ),
-                  ),
-                  child: Text(
-                    '${item.$1} ${item.$2}',
-                    style: TextStyle(
-                      fontWeight: active
-                          ? FontWeight.w900
-                          : FontWeight.w600,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(children: [
+                          Text(item.$1, style: const TextStyle(fontSize: 25)),
+                          const Spacer(),
+                          Icon(active ? Icons.check_circle_rounded : Icons.circle_outlined,
+                            size: 18, color: active ? PatoghTheme.orange : PatoghTheme.muted),
+                        ]),
+                        const SizedBox(height: 5),
+                        Text(item.$2, maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+                        const SizedBox(height: 3),
+                        Text(item.$3, maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: PatoghTheme.muted, fontSize: 9)),
+                      ],
                     ),
                   ),
                 ),
               );
-            }).toList(),
+            },
           ),
+          const SizedBox(height: 10),
+          Text('انتخاب‌شده: ${selected.length}', style: const TextStyle(color: PatoghTheme.muted)),
           const SizedBox(height: 30),
           FilledButton(
             onPressed: selected.length >= 3

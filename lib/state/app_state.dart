@@ -24,6 +24,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AppState extends ChangeNotifier {
   SharedPreferences? _prefs;
   StreamSubscription<List<ChatMessage>>? _chatSubscription;
+  Timer? _sharedRefreshDebounce;
+  bool _sharedRefreshRunning = false;
+  bool _sharedRefreshPending = false;
 
   bool loggedIn = false;
   String phone = '';
@@ -870,11 +873,11 @@ class AppState extends ChangeNotifier {
       loggedIn = PlatformServices.hasRemoteSession;
 
       final remoteEvents = await PlatformServices.fetchEvents();
-      if (remoteEvents.isNotEmpty) {
-        events
-          ..clear()
-          ..addAll(remoteEvents);
-      }
+      // In remote mode an empty server list is genuinely empty; never keep
+      // demo events and present them as real beta data.
+      events
+        ..clear()
+        ..addAll(remoteEvents);
 
       final remoteCategories = await PlatformServices.fetchCategoriesV6();
       if (remoteCategories.isNotEmpty) {
@@ -938,9 +941,13 @@ class AppState extends ChangeNotifier {
 
       if (loggedIn) {
         final remoteProfile = await PlatformServices.loadProfile();
+        // The remote profile is authoritative in Staging/Production. Never let
+        // a previous account's local profile bypass onboarding for this user.
+        profile = remoteProfile;
         if (remoteProfile != null) {
-          profile = remoteProfile;
           await _persistProfile();
+        } else {
+          await _prefs?.remove('profile');
         }
 
         final remoteRoles = await PlatformServices.fetchMyRolesV12();
@@ -966,23 +973,19 @@ class AppState extends ChangeNotifier {
         if (role == UserRole.admin) {
           final remoteRoleRequests =
               await PlatformServices.fetchRoleRequestsV6();
-          if (remoteRoleRequests.isNotEmpty) {
-            roleRequests
-              ..clear()
-              ..addAll(
-                remoteRoleRequests.map(
-                  (row) => RoleRequest(
-                    id: '${row['id']}',
-                    applicantName: 'کاربر درخواست‌دهنده',
-                    requestedRole: UserRoleX.fromKey(
-                      row['requested_role'] as String?,
-                    ),
-                    note: (row['note'] as String?) ?? '',
-                    status: (row['status'] as String?) ?? 'pending',
-                  ),
+          roleRequests
+            ..clear()
+            ..addAll(
+              remoteRoleRequests.map(
+                (row) => RoleRequest(
+                  id: '${row['id']}',
+                  applicantName: (row['applicant_name'] as String?) ?? 'کاربر درخواست‌دهنده',
+                  requestedRole: UserRoleX.fromKey(row['requested_role'] as String?),
+                  note: (row['note'] as String?) ?? '',
+                  status: (row['status'] as String?) ?? 'pending',
                 ),
-              );
-          }
+              ),
+            );
         }
       }
     }
@@ -997,6 +1000,43 @@ class AppState extends ChangeNotifier {
         ),
       ],
     );
+
+    if (AppConfig.useSupabase && loggedIn) _startSharedDataRealtime();
+  }
+
+  void _startSharedDataRealtime() {
+    if (!AppConfig.useSupabase || !loggedIn) return;
+    unawaited(PlatformServices.subscribeToSharedData(_scheduleSharedRefresh).catchError((_) {}));
+  }
+
+  void _scheduleSharedRefresh() {
+    _sharedRefreshDebounce?.cancel();
+    _sharedRefreshDebounce = Timer(const Duration(milliseconds: 650), () async {
+      if (!loggedIn || !AppConfig.useSupabase) return;
+      if (_sharedRefreshRunning) {
+        _sharedRefreshPending = true;
+        return;
+      }
+      _sharedRefreshRunning = true;
+      try {
+        await refreshSocialV12(notify: false);
+        await _syncReservationsFromRemote();
+        final remoteEvents = await PlatformServices.fetchEvents();
+        events
+          ..clear()
+          ..addAll(remoteEvents);
+      } catch (_) {
+        // Keep the last successfully loaded view; the next realtime event or
+        // manual refresh can retry without crashing the UI.
+      } finally {
+        _sharedRefreshRunning = false;
+        notifyListeners();
+        if (_sharedRefreshPending) {
+          _sharedRefreshPending = false;
+          _scheduleSharedRefresh();
+        }
+      }
+    });
   }
 
   Future<void> requestOtp(String phoneNumber) =>
@@ -1013,9 +1053,13 @@ class AppState extends ChangeNotifier {
 
     if (AppConfig.useSupabase) {
       final remoteProfile = await PlatformServices.loadProfile();
+      // Clear cached profile when this authenticated account has not completed
+      // onboarding; do not carry data over from a previous local session.
+      profile = remoteProfile;
       if (remoteProfile != null) {
-        profile = remoteProfile;
         await _persistProfile();
+      } else {
+        await _prefs?.remove('profile');
       }
       final remoteRoles = await PlatformServices.fetchMyRolesV12();
       enabledRoles
@@ -1030,12 +1074,18 @@ class AppState extends ChangeNotifier {
         ..clear()
         ..addAll(await PlatformServices.fetchFavorites());
       await PlatformServices.registerPushToken();
+      _startSharedDataRealtime();
     }
 
     notifyListeners();
   }
 
   Future<void> logout() async {
+    _sharedRefreshDebounce?.cancel();
+    _sharedRefreshPending = false;
+    try {
+      await PlatformServices.unsubscribeFromSharedData();
+    } catch (_) {}
     await PlatformServices.signOut();
     loggedIn = false;
     await _prefs?.setBool('logged_in', false);
@@ -2065,18 +2115,20 @@ class AppState extends ChangeNotifier {
     if (AppConfig.useSupabase) await refreshSocialV12();
   }
 
+  /// Count transparent textual overlaps; this is not a compatibility percentage.
   int matchScore(List<String> eventTags) {
-    final interests = profile?.interests ?? const <String>[];
-    if (interests.isEmpty || eventTags.isEmpty) return 72;
-    var overlap = 0;
-    for (final interest in interests) {
-      if (eventTags.any(
-        (tag) => tag.contains(interest) || interest.contains(tag),
-      )) {
-        overlap++;
-      }
-    }
-    return (72 + overlap * 8).clamp(72, 98);
+    final userTags = <String>{
+      ...(profile?.interests ?? const <String>[]),
+      ...(profile?.personalityTags ?? const <String>[]),
+    }.map((value) => value.trim().toLowerCase()).where((value) => value.isNotEmpty).toSet();
+    final normalizedEventTags = eventTags
+        .map((value) => value.trim().toLowerCase())
+        .where((value) => value.isNotEmpty)
+        .toSet();
+    if (userTags.isEmpty || normalizedEventTags.isEmpty) return 0;
+    return normalizedEventTags.where((eventTag) => userTags.any((userTag) =>
+      userTag == eventTag || userTag.contains(eventTag) || eventTag.contains(userTag),
+    )).length;
   }
 
   Future<void> setEventPolicy(EventAudiencePolicy policy) async {

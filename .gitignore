@@ -58,3 +58,21 @@ config/staging.json
 backend/supabase/.temp/
 apk_artifact/
 patogh_v13_public_android_ios.zip
+
+# Local signing material and temporary secrets (never distribute)
+/keystore.base64
+/secret.txt
+/android/key.properties
+/**/*.jks
+/**/*.keystore
+/**/*.p12
+/**/*.pfx
+/**/*.pem
+
+# Generated archives and local backups
+*.zip
+.v14_startup_diagnostic_backup_*/
+_startup_patch/
+
+# Generated Kotlin state
+/android/.kotlin/

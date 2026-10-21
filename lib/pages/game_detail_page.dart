@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:patogh/config/app_config.dart';
+import 'package:patogh/services/platform_services.dart';
+import 'package:patogh/state/app_state.dart';
 import 'package:patogh/theme/patogh_theme.dart';
+import 'package:patogh/pages/game_room_play_page.dart';
 
 class GameDetailPage extends StatefulWidget {
   final String title;
@@ -17,35 +22,68 @@ class GameDetailPage extends StatefulWidget {
 
 class _GameDetailPageState extends State<GameDetailPage> {
   final TextEditingController _roomCodeController = TextEditingController();
-
+  List<_GameRoom> _rooms = <_GameRoom>[];
   bool _searching = false;
+  bool _loadingRooms = true;
+  bool _roomRefreshRunning = false;
+  String? _roomsError;
 
-  final List<_GameRoom> _rooms = [
-    const _GameRoom(
-      code: '248731',
-      host: 'علی',
-      players: 1,
-      maxPlayers: 2,
-      isPrivate: false,
-    ),
-    const _GameRoom(
-      code: '731924',
-      host: 'سارا',
-      players: 1,
-      maxPlayers: 2,
-      isPrivate: false,
-    ),
-    const _GameRoom(
-      code: '519842',
-      host: 'امیر',
-      players: 2,
-      maxPlayers: 4,
-      isPrivate: false,
-    ),
-  ];
+  String get _gameType => switch (widget.title) {
+        'شطرنج آنلاین' => 'chess',
+        'دوز' => 'tic_tac_toe',
+        'مار و پله' => 'snakes_ladders',
+        'تخته نرد' => 'backgammon',
+        _ => 'tic_tac_toe',
+      };
+
+  int get _maxPlayers => _gameType == 'snakes_ladders' ? 4 : 2;
+
+  @override
+  void initState() {
+    super.initState();
+    appState.addListener(_onSharedStateChanged);
+    _refreshRooms();
+  }
+
+  void _onSharedStateChanged() {
+    if (AppConfig.useSupabase && !_loadingRooms) {
+      _refreshRooms(showLoading: false);
+    }
+  }
+
+  Future<void> _refreshRooms({bool showLoading = true}) async {
+    if (_roomRefreshRunning) return;
+    _roomRefreshRunning = true;
+    if (!AppConfig.useSupabase) {
+      if (!mounted) return;
+      setState(() {
+        _rooms = <_GameRoom>[];
+        _loadingRooms = false;
+        _roomsError = 'اتاق‌های مشترک به اتصال Staging نیاز دارند.';
+        _roomRefreshRunning = false;
+      });
+      return;
+    }
+    if (showLoading && mounted) setState(() => _loadingRooms = true);
+    try {
+      final rows = await PlatformServices.fetchGameRoomsV14(gameType: _gameType);
+      if (!mounted) return;
+      setState(() {
+        _rooms = rows.map(_GameRoom.fromMap).toList();
+        _roomsError = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _roomsError = 'دریافت اتاق‌ها انجام نشد: $error');
+    } finally {
+      _roomRefreshRunning = false;
+      if (mounted) setState(() => _loadingRooms = false);
+    }
+  }
 
   @override
   void dispose() {
+    appState.removeListener(_onSharedStateChanged);
     _roomCodeController.dispose();
     super.dispose();
   }
@@ -72,12 +110,18 @@ class _GameDetailPageState extends State<GameDetailPage> {
             const SizedBox(height: 26),
             _roomsHeader(),
             const SizedBox(height: 12),
+            if (_loadingRooms) const LinearProgressIndicator(minHeight: 2),
+            if (_roomsError != null) _roomMessage(_roomsError!, error: true),
+            if (!_loadingRooms && _rooms.isEmpty && _roomsError == null)
+              _roomMessage('اتاق عمومی فعالی نیست. می‌توانی اتاق بسازی و کدش را برای دوستت بفرستی.'),
             ..._rooms.map(
               (room) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _roomCard(context, room),
               ),
             ),
+            const SizedBox(height: 10),
+            _roomMessage('ساخت و عضویت اتاق روی سرور مشترک ثبت می‌شود؛ موتور قوانین و اجرای نوبت‌های بازی هنوز تکمیل نشده است.'),
           ],
         ),
       ),
@@ -125,7 +169,7 @@ class _GameDetailPageState extends State<GameDetailPage> {
           ),
           const SizedBox(height: 6),
           const Text(
-            'رقابت آنلاین با دوستان و هم‌پاتوقی‌ها',
+            'ساخت اتاق مشترک و هماهنگی با هم‌پاتوقی‌ها',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.white70,
@@ -138,18 +182,18 @@ class _GameDetailPageState extends State<GameDetailPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _heroBadge(
-                Icons.wifi_rounded,
-                'آنلاین',
+                Icons.sync_rounded,
+                'اتاق مشترک',
               ),
               const SizedBox(width: 8),
               _heroBadge(
                 Icons.people_alt_rounded,
-                'چندنفره',
+                'دعوت دوستان',
               ),
               const SizedBox(width: 8),
               _heroBadge(
-                Icons.emoji_events_rounded,
-                'رقابتی',
+                Icons.rule_rounded,
+                'قوانین در حال تکمیل',
               ),
             ],
           ),
@@ -312,59 +356,25 @@ class _GameDetailPageState extends State<GameDetailPage> {
       ),
       child: Row(
         children: [
-          Stack(
-            children: [
-              const CircleAvatar(
-                radius: 25,
-                backgroundColor: PatoghTheme.surface2,
-                child: Icon(Icons.people_alt_rounded),
-              ),
-              Positioned(
-                bottom: 1,
-                right: 1,
-                child: Container(
-                  width: 13,
-                  height: 13,
-                  decoration: BoxDecoration(
-                    color: PatoghTheme.teal,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: PatoghTheme.surface,
-                      width: 2,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          const CircleAvatar(
+            radius: 25,
+            backgroundColor: PatoghTheme.surface2,
+            child: Icon(Icons.people_alt_rounded),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'بازیکنان آنلاین',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  '۱۲ هم‌پاتوقی آماده بازی هستند',
-                  style: TextStyle(
-                    color: PatoghTheme.muted,
-                    fontSize: 10,
-                  ),
-                ),
+                const Text('اتاق‌های مشترک', style: TextStyle(fontWeight: FontWeight.w900)),
+                const SizedBox(height: 3),
+                Text('${_rooms.length} اتاق عمومی برای این بازی', style: const TextStyle(color: PatoghTheme.muted, fontSize: 10)),
               ],
             ),
           ),
           TextButton.icon(
             onPressed: _inviteFriend,
-            icon: const Icon(
-              Icons.person_add_alt_1_rounded,
-              size: 17,
-            ),
+            icon: const Icon(Icons.person_add_alt_1_rounded, size: 17),
             label: const Text('دعوت'),
           ),
         ],
@@ -372,35 +382,31 @@ class _GameDetailPageState extends State<GameDetailPage> {
     );
   }
 
+  Widget _roomMessage(String text, {bool error = false}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: PatoghTheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: error ? Colors.redAccent.withAlpha(120) : PatoghTheme.surface2),
+      ),
+      child: Text(text, style: const TextStyle(fontSize: 11, height: 1.65)),
+    );
+  }
+
   Widget _roomsHeader() {
-  return const Row(
-    children: [
-      Expanded(
-        child: Text(
-          'اتاق‌های فعال',
-          style: TextStyle(
-            fontSize: 19,
-            fontWeight: FontWeight.w900,
-          ),
+    return Row(
+      children: [
+        const Expanded(child: Text('اتاق‌های عمومی از سرور', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900))),
+        IconButton(
+          tooltip: 'به‌روزرسانی',
+          onPressed: _loadingRooms ? null : () => _refreshRooms(),
+          icon: const Icon(Icons.refresh_rounded, color: PatoghTheme.teal),
         ),
-      ),
-      Icon(
-        Icons.radio_button_checked_rounded,
-        color: PatoghTheme.teal,
-        size: 17,
-      ),
-      SizedBox(width: 5),
-      Text(
-        'زنده',
-        style: TextStyle(
-          color: PatoghTheme.teal,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
 Widget _roomCard(
   BuildContext context,
@@ -452,7 +458,7 @@ Widget _roomCard(
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    '${room.players}/${room.maxPlayers} بازیکن',
+                    '${room.players}/${room.maxPlayers} بازیکن • کد ${room.code}',
                     style: const TextStyle(
                       color: PatoghTheme.muted,
                       fontSize: 10,
@@ -481,193 +487,149 @@ Widget _roomCard(
   );
 }
 
-void _createRoom(BuildContext context) {
-  final code =
-      (100000 + DateTime.now().millisecondsSinceEpoch % 900000).toString();
-
-  setState(() {
-    _rooms.insert(
-      0,
-      _GameRoom(
-        code: code,
-        host: 'من',
-        players: 1,
-        maxPlayers: widget.title == 'مار و پله' ? 4 : 2,
-        isPrivate: true,
-      ),
+Future<void> _createRoom(BuildContext context) async {
+  if (!AppConfig.useSupabase) {
+    _snack(context, 'برای ساخت اتاق مشترک، نسخه Staging و اتصال سرور لازم است.');
+    return;
+  }
+  try {
+    final room = await PlatformServices.createGameRoomV14(
+      gameType: _gameType,
+      maxPlayers: _maxPlayers,
+      isPrivate: false,
     );
-  });
-
-  showDialog<void>(
-    context: context,
-    builder: (dialogContext) {
-      return AlertDialog(
-        title: const Text(
-          'اتاق ساخته شد 🎮',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-          ),
-        ),
+    await _refreshRooms();
+    if (!context.mounted) return;
+    final code = '${room['room_code']}';
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('اتاق مشترک ساخته شد'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'این کد رو برای دوستت بفرست:',
-            ),
+            const Text('این کد را برای دوستت بفرست تا به اتاق بپیوندد.'),
             const SizedBox(height: 14),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: PatoghTheme.surface2,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Text(
-                code,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 4,
-                ),
-              ),
-            ),
+            SelectableText(code, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: 4)),
+            const SizedBox(height: 12),
+            Text(_gameType == 'tic_tac_toe' || _gameType == 'snakes_ladders' ? 'اتاق و نوبت‌های این بازی در Staging ذخیره می‌شوند.' : 'اتاق ساخته می‌شود، اما موتور قوانین این بازی هنوز در دسترس نیست.', style: const TextStyle(fontSize: 11, height: 1.6)),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('بستن'),
-          ),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('بستن')),
           FilledButton.icon(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              _inviteFriend();
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: code));
+              if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+              if (context.mounted) _snack(context, 'کد اتاق کپی شد.');
             },
-            icon: const Icon(Icons.person_add_alt_1_rounded),
-            label: const Text('دعوت دوست'),
+            icon: const Icon(Icons.copy_rounded),
+            label: const Text('کپی کد'),
           ),
         ],
-      );
-    },
-  );
+      ),
+    );
+    if (!context.mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => GameRoomPlayPage(
+          roomCode: code,
+          title: widget.title,
+          icon: widget.icon,
+        ),
+      ),
+    );
+  } catch (error) {
+    if (context.mounted) _snack(context, 'ساخت اتاق انجام نشد: $error');
+  }
 }
 
 void _showJoinRoomDialog(BuildContext context) {
   _roomCodeController.clear();
-
   showDialog<void>(
     context: context,
-    builder: (dialogContext) {
-      return AlertDialog(
-        title: const Text(
-          'ورود به اتاق',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        content: TextField(
-          controller: _roomCodeController,
-          keyboardType: TextInputType.number,
-          maxLength: 6,
-          decoration: const InputDecoration(
-            labelText: 'کد ۶ رقمی اتاق',
-            prefixIcon: Icon(Icons.key_rounded),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('انصراف'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final code = _roomCodeController.text.trim();
-
-              if (code.length != 6) {
-                return;
-              }
-
-              Navigator.of(dialogContext).pop();
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'در حال ورود به اتاق $code...',
-                  ),
-                ),
-              );
-            },
-            child: const Text('ورود'),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-void _joinRoom(
-  BuildContext context,
-  _GameRoom room,
-) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        'در حال ورود به اتاق ${room.host}...',
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('ورود به اتاق'),
+      content: TextField(
+        controller: _roomCodeController,
+        keyboardType: TextInputType.number,
+        maxLength: 6,
+        decoration: const InputDecoration(labelText: 'کد ۶ رقمی اتاق', prefixIcon: Icon(Icons.key_rounded)),
       ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('انصراف')),
+        FilledButton(
+          onPressed: () async {
+            final code = _roomCodeController.text.trim();
+            if (!RegExp(r'^\d{6}$').hasMatch(code)) {
+              _snack(context, 'کد اتاق باید ۶ رقم باشد.');
+              return;
+            }
+            Navigator.of(dialogContext).pop();
+            await _joinRoomByCode(context, code);
+          },
+          child: const Text('ورود'),
+        ),
+      ],
     ),
   );
 }
 
-Future<void> _quickMatch(BuildContext context) async {
-  setState(() {
-    _searching = true;
-  });
+Future<void> _joinRoom(BuildContext context, _GameRoom room) =>
+    _joinRoomByCode(context, room.code);
 
-  await Future<void>.delayed(
-    const Duration(milliseconds: 1200),
-  );
-
-if (!context.mounted) return;
-  setState(() {
-    _searching = false;
-  });
-
-  final availableRooms = _rooms
-      .where(
-        (room) => !room.isPrivate && room.players < room.maxPlayers,
-      )
-      .toList();
-
-  if (availableRooms.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'فعلاً حریف آزادی پیدا نشد.',
+Future<void> _joinRoomByCode(BuildContext context, String code) async {
+  if (!AppConfig.useSupabase) {
+    _snack(context, 'برای ورود به اتاق مشترک، نسخه Staging لازم است.');
+    return;
+  }
+  try {
+    final room = await PlatformServices.joinGameRoomV14(code);
+    await _refreshRooms();
+    if (!context.mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => GameRoomPlayPage(
+          roomCode: code,
+          title: widget.title,
+          icon: widget.icon,
+          gameType: '${room['game_type'] ?? _gameType}',
         ),
       ),
     );
-    return;
+  } catch (error) {
+    if (context.mounted) _snack(context, 'ورود به اتاق انجام نشد: $error');
   }
+}
 
-  _joinRoom(
-    context,
-    availableRooms.first,
-  );
+Future<void> _quickMatch(BuildContext context) async {
+  setState(() => _searching = true);
+  try {
+    final rooms = await PlatformServices.fetchGameRoomsV14(gameType: _gameType);
+    if (!context.mounted) return;
+    if (rooms.isEmpty) {
+      _snack(context, 'اتاق عمومی آزادی پیدا نشد؛ می‌توانی یک اتاق بسازی.');
+      return;
+    }
+    await _joinRoomByCode(context, '${rooms.first['room_code']}');
+  } catch (error) {
+    if (context.mounted) _snack(context, 'جست‌وجوی اتاق انجام نشد: $error');
+  } finally {
+    if (mounted) setState(() => _searching = false);
+  }
 }
 
 void _inviteFriend() {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text(
-        'بخش دعوت هم‌پاتوقی در مرحله اتصال به سیستم اجتماعی فعال می‌شود.',
-      ),
-    ),
-  );
+  _snack(context, 'برای دعوت دوست، یک اتاق بساز و کد ۶ رقمی آن را کپی کن.');
+}
+
+void _snack(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
 }
 
 class _GameRoom {
+  final String id;
   final String code;
   final String host;
   final int players;
@@ -675,10 +637,20 @@ class _GameRoom {
   final bool isPrivate;
 
   const _GameRoom({
+    required this.id,
     required this.code,
     required this.host,
     required this.players,
     required this.maxPlayers,
     required this.isPrivate,
   });
+
+  factory _GameRoom.fromMap(Map<String, dynamic> map) => _GameRoom(
+        id: '${map['id']}',
+        code: '${map['room_code'] ?? ''}',
+        host: (map['host_name'] as String?) ?? 'کاربر پاتوق',
+        players: (map['players'] as num?)?.toInt() ?? 0,
+        maxPlayers: (map['max_players'] as num?)?.toInt() ?? 2,
+        isPrivate: (map['is_private'] as bool?) ?? false,
+      );
 }
