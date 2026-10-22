@@ -48,15 +48,23 @@ jobs:
 
       - name: Build Demo QA APK
         run: |
-          flutter build apk --debug \
+          flutter build apk --release \
             --dart-define=PATOGH_MODE=demo \
             --build-name=1.0.0 \
-            --build-number=140001
+            --build-number=140002
+
+      - name: Verify APK signature
+        run: |
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$APK"
+          sha256sum "$APK"
+          ls -lh "$APK"
 
       - name: Upload QA APK
         uses: actions/upload-artifact@v4
         with:
-          name: patogh-v14-unified-demo-qa
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: patogh-v14-unified-demo-qa-release
+          path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 14
