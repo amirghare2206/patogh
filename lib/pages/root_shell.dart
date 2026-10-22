@@ -180,23 +180,16 @@ class _RootShellState extends State<RootShell> {
             _NavItem(Icons.person_rounded, 'پروفایل'),
           ],
         );
-     case UserRole.participant:
-  return const _ShellConfig(
-    pages: [
-      HomePage(),
-      SocialHubPage(),
-      ServicesHubPage(),
-      GamePage(),
-      ProfilePage(),
-    ],
-    items: [
-      _NavItem(Icons.home_rounded, 'خانه'),
-      _NavItem(Icons.groups_rounded, 'اجتماع'),
-      _NavItem(Icons.apps_rounded, 'سرویس‌ها'),
-      _NavItem(Icons.sports_esports_rounded, 'بازی‌ها'),
-      _NavItem(Icons.person_rounded, 'پروفایل'),
-    ],
-  );
+      case UserRole.participant:
+        return const _ShellConfig(
+          pages: [HomePage(), SocialHubPage(), ServicesHubPage(), GamePage()],
+          items: [
+            _NavItem(Icons.home_rounded, 'خانه'),
+            _NavItem(Icons.groups_rounded, 'اجتماع'),
+            _NavItem(Icons.apps_rounded, 'سرویس‌ها'),
+            _NavItem(Icons.sports_esports_rounded, 'بازی‌ها'),
+          ],
+        );
     }
   }
 }

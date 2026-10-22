@@ -6,6 +6,7 @@ class UserProfile {
   final String city;
 
   final List<String> interests;
+  final String avatarUrl;
 
   final String education;
   final String maritalStatus;
@@ -26,6 +27,7 @@ class UserProfile {
     required this.age,
     required this.city,
     required this.interests,
+    this.avatarUrl = '',
     required this.showAge,
     required this.allowChat,
     this.education = '',
@@ -44,6 +46,7 @@ class UserProfile {
     int? age,
     String? city,
     List<String>? interests,
+    String? avatarUrl,
     String? education,
     String? maritalStatus,
     bool? hasChildren,
@@ -61,6 +64,7 @@ class UserProfile {
       age: age ?? this.age,
       city: city ?? this.city,
       interests: interests ?? this.interests,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
       education: education ?? this.education,
       maritalStatus: maritalStatus ?? this.maritalStatus,
       hasChildren: hasChildren ?? this.hasChildren,
@@ -76,31 +80,31 @@ class UserProfile {
   }
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'age': age,
-        'city': city,
-        'interests': interests,
-        'education': education,
-        'maritalStatus': maritalStatus,
-        'hasChildren': hasChildren,
-        'militaryStatus': militaryStatus,
-        'personalityType': personalityType,
-        'leisureStyle': leisureStyle,
-        'personalityTags': personalityTags,
-        'personalityAnswers': personalityAnswers,
-        'showAge': showAge,
-        'allowChat': allowChat,
-        'role': role.key,
-      };
+    'name': name,
+    'age': age,
+    'city': city,
+    'interests': interests,
+    'avatarUrl': avatarUrl,
+    'education': education,
+    'maritalStatus': maritalStatus,
+    'hasChildren': hasChildren,
+    'militaryStatus': militaryStatus,
+    'personalityType': personalityType,
+    'leisureStyle': leisureStyle,
+    'personalityTags': personalityTags,
+    'personalityAnswers': personalityAnswers,
+    'showAge': showAge,
+    'allowChat': allowChat,
+    'role': role.key,
+  };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
       name: (json['name'] as String?) ?? 'کاربر پاتوق',
       age: (json['age'] as num?)?.toInt() ?? 25,
       city: (json['city'] as String?) ?? 'مشهد',
-      interests: List<String>.from(
-        (json['interests'] as List?) ?? const [],
-      ),
+      interests: List<String>.from((json['interests'] as List?) ?? const []),
+      avatarUrl: (json['avatarUrl'] as String?) ?? '',
       education: (json['education'] as String?) ?? '',
       maritalStatus: (json['maritalStatus'] as String?) ?? '',
       hasChildren: json['hasChildren'] as bool?,

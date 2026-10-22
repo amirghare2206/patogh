@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:patogh/pages/notifications_page.dart';
 import 'package:flutter/material.dart';
 import 'package:patogh/models/ecosystem_models.dart';
@@ -17,6 +18,7 @@ import 'package:patogh/pages/profile_page.dart';
 import 'package:patogh/pages/category_events_page.dart';
 import 'package:patogh/models/patogh_category.dart';
 import 'package:patogh/data/mock_data.dart' as mock;
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -82,7 +84,7 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 16),
                   _bannerCarousel(context, banners),
                 ],
-              const SizedBox(height: 22),
+                const SizedBox(height: 22),
                 _serviceCategories(context),
               ],
             ),
@@ -92,122 +94,122 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-Widget _header(BuildContext context) {
-  return SizedBox(
-    height: 82,
-    child: Stack(
-      alignment: Alignment.center,
-      children: [
-        Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(18),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
+  Widget _header(BuildContext context) {
+    return SizedBox(
+      height: 82,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(18),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Image.asset(
+                        'assets/branding/patogh_logo.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => const Icon(
+                          Icons.groups_rounded,
+                          color: PatoghTheme.orange,
                         ),
-                      ],
+                      ),
                     ),
-                    child: Image.asset(
-                      'assets/branding/patogh_logo.png',
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, _, _) => const Icon(
-                        Icons.groups_rounded,
-                        color: PatoghTheme.orange,
+                    const SizedBox(width: 9),
+                    const Text(
+                      'پاتوق',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                const Text(
+                  'آدم‌ها، تجربه‌ها و جمع‌های واقعی',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: PatoghTheme.muted,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Positioned(
+            right: 0,
+            top: 8,
+            child: IconButton.filledTonal(
+              tooltip: 'پروفایل من',
+              onPressed: () {
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const ProfilePage()));
+              },
+              icon: const Icon(Icons.person_rounded),
+            ),
+          ),
+
+          Positioned(
+            left: 0,
+            top: 8,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton.filledTonal(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationsPage(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.notifications_rounded),
+                  tooltip: 'اعلان‌ها',
+                ),
+
+                Positioned(
+                  right: 3,
+                  top: 2,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: PatoghTheme.orange,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        width: 2,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 9),
-                  const Text(
-                    'پاتوق',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 5),
-              const Text(
-                'آدم‌ها، تجربه‌ها و جمع‌های واقعی',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: PatoghTheme.muted,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-
-        Positioned(
-          right: 0,
-          top: 8,
-          child: IconButton.filledTonal(
-            tooltip: 'پروفایل من',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ProfilePage()),
-              );
-            },
-            icon: const Icon(Icons.person_rounded),
-          ),
-        ),
-
-        Positioned(
-          left: 0,
-          top: 8,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              IconButton.filledTonal(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const NotificationsPage(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.notifications_rounded),
-                tooltip: 'اعلان‌ها',
-              ),
-
-              Positioned(
-                right: 3,
-                top: 2,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: PatoghTheme.orange,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      width: 2,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget _location(BuildContext context) {
     return InkWell(
@@ -257,110 +259,164 @@ Widget _header(BuildContext context) {
     );
   }
 
- Widget _stories(BuildContext context) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Row(
-        children: [
-          const Expanded(
-            child: Text(
-              'استوری‌ها',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
+  Widget _stories(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'استوری‌ها',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
               ),
             ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const StoriesPage(),
-                ),
-              );
-            },
-            child: const Text('مشاهده همه'),
-          ),
-        ],
-      ),
-      const SizedBox(height: 8),
+            TextButton(
+              onPressed: () {
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const StoriesPage()));
+              },
+              child: const Text('مشاهده همه'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
 
-      SizedBox(
-        height: 104,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: appState.stories.length + 1,
-          separatorBuilder: (_, _) => const SizedBox(width: 12),
-          itemBuilder: (context, index) {
-            // استوری خود کاربر
-            if (index == 0) {
+        SizedBox(
+          height: 104,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: appState.stories.length + 1,
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              // استوری خود کاربر
+              if (index == 0) {
+                return InkWell(
+                  borderRadius: BorderRadius.circular(30),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const StoriesPage()),
+                    );
+                  },
+                  child: SizedBox(
+                    width: 74,
+                    child: Column(
+                      children: [
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              width: 68,
+                              height: 68,
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: PatoghTheme.purple.withAlpha(100),
+                                  width: 2,
+                                ),
+                              ),
+                              child: const CircleAvatar(
+                                backgroundColor: PatoghTheme.surface2,
+                                child: Icon(
+                                  Icons.person_rounded,
+                                  size: 31,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: -1,
+                              right: -1,
+                              child: Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: PatoghTheme.orange,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Theme.of(context)
+                                        .scaffoldBackgroundColor,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.add_rounded,
+                                  size: 17,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 7),
+                        const Text(
+                          'استوری من',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              final story = appState.stories[index - 1];
+
               return InkWell(
                 borderRadius: BorderRadius.circular(30),
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const StoriesPage(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const StoriesPage()),
                   );
                 },
                 child: SizedBox(
                   width: 74,
                   child: Column(
                     children: [
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Container(
-                            width: 68,
-                            height: 68,
-                            padding: const EdgeInsets.all(3),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: PatoghTheme.purple.withAlpha(100),
-                                width: 2,
-                              ),
-                            ),
-                            child: const CircleAvatar(
-                              backgroundColor: PatoghTheme.surface2,
-                              child: Icon(
-                                Icons.person_rounded,
-                                size: 31,
+                      Container(
+                        width: 68,
+                        height: 68,
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: PatoghTheme.brandGradient,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: CircleAvatar(
+                            backgroundColor: PatoghTheme.surface2,
+                            child: Text(
+                              story.owner.trim().isEmpty
+                                  ? 'پ'
+                                  : String.fromCharCode(
+                                      story.owner.trim().runes.first,
+                                    ),
+                              style: const TextStyle(
                                 color: Colors.white,
+                                fontSize: 21,
+                                fontWeight: FontWeight.w900,
                               ),
                             ),
                           ),
-                          Positioned(
-                            bottom: -1,
-                            right: -1,
-                            child: Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: PatoghTheme.orange,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Theme.of(context)
-                                      .scaffoldBackgroundColor,
-                                  width: 2,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.add_rounded,
-                                size: 17,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                       const SizedBox(height: 7),
-                      const Text(
-                        'استوری من',
+                      Text(
+                        story.owner,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
                         ),
@@ -369,75 +425,12 @@ Widget _header(BuildContext context) {
                   ),
                 ),
               );
-            }
-
-            final story = appState.stories[index - 1];
-
-            return InkWell(
-              borderRadius: BorderRadius.circular(30),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const StoriesPage(),
-                  ),
-                );
-              },
-              child: SizedBox(
-                width: 74,
-                child: Column(
-                  children: [
-                    Container(
-                      width: 68,
-                      height: 68,
-                      padding: const EdgeInsets.all(3),
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: PatoghTheme.brandGradient,
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).scaffoldBackgroundColor,
-                          shape: BoxShape.circle,
-                        ),
-                        child: CircleAvatar(
-                          backgroundColor: PatoghTheme.surface2,
-                          child: Text(
-                            story.owner.trim().isEmpty
-                                ? 'پ'
-                                : String.fromCharCode(
-                                    story.owner.trim().runes.first,
-                                  ),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 21,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 7),
-                    Text(
-                      story.owner,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+            },
+          ),
         ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
   Widget _bannerCarousel(BuildContext context, List<BannerItem> banners) {
     return Column(
@@ -552,13 +545,51 @@ Widget _header(BuildContext context) {
     );
   }
 
+  static const Map<String, String> _categoryEmoji = {
+    'companion': '🫶',
+    'volunteer': '🌱',
+    'empathy': '💗',
+    'story': '📚',
+    'sport': '🏸',
+    'think': '💡',
+    'travel': '🏕️',
+    'learn': '🎨',
+    'work': '🧩',
+    'game': '🎲',
+    'talk': '💬',
+    'intro': '✨',
+  };
+
+  static const List<Color> _pastelPalette = [
+    Color(0xFFFFE4EC),
+    Color(0xFFE1F7E9),
+    Color(0xFFFFE8E1),
+    Color(0xFFE7E6FF),
+    Color(0xFFDDF5FF),
+    Color(0xFFFFF1C9),
+    Color(0xFFE5F0FF),
+    Color(0xFFF7E2FF),
+    Color(0xFFE5F4D6),
+    Color(0xFFFFE2F2),
+    Color(0xFFDDF8F3),
+    Color(0xFFFFEACF),
+  ];
+
   Widget _serviceCategories(BuildContext context) {
     // ترتیب مطابق تصویر مرجع کاربر: از راست به چپ و ردیف‌به‌ردیف.
     const desiredOrder = <String>[
-      'companion', 'volunteer', 'empathy',
-      'story', 'sport', 'think',
-      'travel', 'learn', 'work',
-      'game', 'talk', 'intro',
+      'companion',
+      'volunteer',
+      'empathy',
+      'story',
+      'sport',
+      'think',
+      'travel',
+      'learn',
+      'work',
+      'game',
+      'talk',
+      'intro',
     ];
     // Always retain the twelve baseline categories shown in the approved
     // reference; active server categories override their display metadata.
@@ -573,8 +604,9 @@ Widget _header(BuildContext context) {
       if (category != null) ordered.add(category);
     }
     // Custom categories remain available after the twelve reference categories.
-    ordered.addAll(byId.values.toList()
-      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)));
+    ordered.addAll(
+      byId.values.toList()..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -603,56 +635,90 @@ Widget _header(BuildContext context) {
           ),
           itemBuilder: (context, index) {
             final category = ordered[index];
-            final color = category.accent;
-            return Material(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => CategoryEventsPage(category: category),
+            final pastel = _pastelPalette[index % _pastelPalette.length];
+            final emoji = _categoryEmoji[category.id];
+            return Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: pastel.withAlpha(95),
+                    blurRadius: 13,
+                    offset: const Offset(0, 5),
                   ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 54,
-                        height: 54,
-                        decoration: BoxDecoration(
-                          color: color.withAlpha(28),
-                          borderRadius: BorderRadius.circular(18),
+                ],
+              ),
+              child: Material(
+                color: pastel,
+                borderRadius: BorderRadius.circular(24),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => CategoryEventsPage(category: category),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 12,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 58,
+                          height: 58,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(205),
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(color: Colors.white, width: 1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(12),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: emoji != null
+                              ? Text(
+                                  emoji,
+                                  style: const TextStyle(fontSize: 30),
+                                )
+                              : Icon(
+                                  category.icon,
+                                  color: const Color(0xFF625A85),
+                                  size: 30,
+                                ),
                         ),
-                        child: Icon(category.icon, color: color, size: 30),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        category.title,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF171717),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
+                        const SizedBox(height: 10),
+                        Text(
+                          category.title,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF38334C),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        category.subtitle,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF777777),
-                          fontSize: 8,
-                          height: 1.35,
+                        const SizedBox(height: 4),
+                        Text(
+                          category.subtitle,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF756F83),
+                            fontSize: 8,
+                            height: 1.35,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

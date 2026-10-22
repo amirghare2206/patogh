@@ -3,6 +3,8 @@ import 'package:patogh/data/iran_locations.dart';
 import 'package:patogh/models/user_profile.dart';
 import 'package:patogh/state/app_state.dart';
 import 'package:patogh/theme/patogh_theme.dart';
+import 'package:patogh/services/platform_services.dart';
+import 'package:patogh/widgets/profile_avatar_picker.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -19,21 +21,46 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late Set<String> selectedInterests;
   bool _saving = false;
   String? _error;
+  PickedProfileImage? _pickedAvatar;
 
   static const List<String> interests = [
-    'کافه و دورهمی', 'گفت‌وگو', 'کتاب و ادبیات', 'بازی', 'ورزش',
-    'سفر و طبیعت', 'فناوری', 'فیلم و سینما', 'هنر', 'خانواده',
-    'داوطلبانه', 'غذا و آشپزی', 'عکاسی', 'موسیقی', 'همدلی', 'فکری',
-    'کاری', 'آموزشی', 'محیط زیست', 'حیوانات', 'سلامت و آرامش',
-    'ساخت و مهارت', 'زبان‌آموزی', 'کشف شهر', 'تئاتر و اجرا',
-    'کارآفرینی', 'سبک زندگی', 'بازی فکری',
+    'کافه و دورهمی',
+    'گفت‌وگو',
+    'کتاب و ادبیات',
+    'بازی',
+    'ورزش',
+    'سفر و طبیعت',
+    'فناوری',
+    'فیلم و سینما',
+    'هنر',
+    'خانواده',
+    'داوطلبانه',
+    'غذا و آشپزی',
+    'عکاسی',
+    'موسیقی',
+    'همدلی',
+    'فکری',
+    'کاری',
+    'آموزشی',
+    'محیط زیست',
+    'حیوانات',
+    'سلامت و آرامش',
+    'ساخت و مهارت',
+    'زبان‌آموزی',
+    'کشف شهر',
+    'تئاتر و اجرا',
+    'کارآفرینی',
+    'سبک زندگی',
+    'بازی فکری',
   ];
 
   @override
   void initState() {
     super.initState();
     final profile = appState.profile;
-    nameController = TextEditingController(text: profile?.name ?? 'کاربر پاتوق');
+    nameController = TextEditingController(
+      text: profile?.name ?? 'کاربر پاتوق',
+    );
     ageController = TextEditingController(text: '${profile?.age ?? 25}');
     const legacyInterestAliases = <String, String>{
       'کافه': 'کافه و دورهمی',
@@ -84,6 +111,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
     try {
       final current = appState.profile;
+      final avatarUrl = _pickedAvatar == null
+          ? (current?.avatarUrl ?? '')
+          : await PlatformServices.saveProfileAvatar(
+              fileName: _pickedAvatar!.fileName,
+              bytes: _pickedAvatar!.bytes,
+              mimeType: _pickedAvatar!.mimeType,
+            );
       final updated = UserProfile(
         name: nameController.text.trim().isEmpty
             ? 'کاربر پاتوق'
@@ -91,6 +125,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         age: age,
         city: city,
         interests: selectedInterests.toList()..sort(),
+        avatarUrl: avatarUrl,
         // Preserve all V14 profile fields while editing basic details.
         education: current?.education ?? '',
         maritalStatus: current?.maritalStatus ?? '',
@@ -109,7 +144,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (mounted) Navigator.of(context).pop();
     } catch (error) {
       if (mounted) {
-        setState(() => _error = 'ذخیره پروفایل انجام نشد. اتصال را بررسی کن و دوباره تلاش کن.\n$error');
+        setState(
+          () => _error =
+              'ذخیره پروفایل انجام نشد. اتصال را بررسی کن و دوباره تلاش کن.\n$error',
+        );
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -134,6 +172,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
           child: ListView(
             padding: const EdgeInsets.all(22),
             children: [
+              ProfileAvatarPicker(
+                avatarUrl: appState.profile?.avatarUrl,
+                previewBytes: _pickedAvatar?.bytes,
+                enabled: !_saving,
+                onPicked: (picked) => setState(() => _pickedAvatar = picked),
+              ),
+              const SizedBox(height: 20),
               TextField(
                 controller: nameController,
                 textInputAction: TextInputAction.next,
@@ -149,34 +194,57 @@ class _EditProfilePageState extends State<EditProfilePage> {
               DropdownButtonFormField<String>(
                 initialValue: province,
                 isExpanded: true,
-                items: provinces.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
-                onChanged: _saving ? null : (value) {
-                  if (value == null) return;
-                  final nextCities = IranLocations.citiesFor(value);
-                  setState(() {
-                    province = value;
-                    city = nextCities.isNotEmpty ? nextCities.first : '';
-                  });
-                },
+                items: provinces
+                    .map(
+                      (item) =>
+                          DropdownMenuItem(value: item, child: Text(item)),
+                    )
+                    .toList(),
+                onChanged: _saving
+                    ? null
+                    : (value) {
+                        if (value == null) return;
+                        final nextCities = IranLocations.citiesFor(value);
+                        setState(() {
+                          province = value;
+                          city = nextCities.isNotEmpty ? nextCities.first : '';
+                        });
+                      },
                 decoration: const InputDecoration(labelText: 'استان'),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 key: ValueKey(province),
-                initialValue: cities.contains(city) ? city : (cities.isNotEmpty ? cities.first : null),
+                initialValue: cities.contains(city)
+                    ? city
+                    : (cities.isNotEmpty ? cities.first : null),
                 isExpanded: true,
-                items: cities.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
-                onChanged: _saving ? null : (value) {
-                  if (value != null) setState(() => city = value);
-                },
+                items: cities
+                    .map(
+                      (item) =>
+                          DropdownMenuItem(value: item, child: Text(item)),
+                    )
+                    .toList(),
+                onChanged: _saving
+                    ? null
+                    : (value) {
+                        if (value != null) setState(() => city = value);
+                      },
                 decoration: const InputDecoration(labelText: 'شهر'),
               ),
               const SizedBox(height: 18),
-              const Text('علایق', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              const Text(
+                'علایق',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+              ),
               const SizedBox(height: 5),
               const Text(
                 'حداقل ۳ مورد انتخاب کن. تغییر علایق برای پیشنهادهای آینده استفاده می‌شود.',
-                style: TextStyle(color: PatoghTheme.muted, fontSize: 11, height: 1.6),
+                style: TextStyle(
+                  color: PatoghTheme.muted,
+                  fontSize: 11,
+                  height: 1.6,
+                ),
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -187,20 +255,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   return FilterChip(
                     label: Text(interest),
                     selected: selected,
-                    onSelected: _saving ? null : (value) {
-                      setState(() {
-                        if (value) {
-                          selectedInterests.add(interest);
-                        } else {
-                          selectedInterests.remove(interest);
-                        }
-                      });
-                    },
+                    onSelected: _saving
+                        ? null
+                        : (value) {
+                            setState(() {
+                              if (value) {
+                                selectedInterests.add(interest);
+                              } else {
+                                selectedInterests.remove(interest);
+                              }
+                            });
+                          },
                   );
                 }).toList(),
               ),
               const SizedBox(height: 10),
-              Text('انتخاب‌شده: ${selectedInterests.length}', style: const TextStyle(color: PatoghTheme.muted, fontSize: 11)),
+              Text(
+                'انتخاب‌شده: ${selectedInterests.length}',
+                style: const TextStyle(color: PatoghTheme.muted, fontSize: 11),
+              ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Container(
@@ -210,14 +283,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: Colors.redAccent.withAlpha(100)),
                   ),
-                  child: Text(_error!, style: const TextStyle(height: 1.6, fontSize: 11)),
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(height: 1.6, fontSize: 11),
+                  ),
                 ),
               ],
               const SizedBox(height: 24),
               FilledButton.icon(
                 onPressed: _saving ? null : _save,
                 icon: _saving
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Icon(Icons.save_rounded),
                 label: Text(_saving ? 'در حال ذخیره...' : 'ذخیره تغییرات'),
               ),

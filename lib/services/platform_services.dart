@@ -54,7 +54,9 @@ class PlatformServices {
     final client = _supabase;
     if (client == null) return;
     await _sharedChangesChannel?.unsubscribe();
-    final channel = client.channel('patogh-shared-data-${currentUserId ?? 'guest'}');
+    final channel = client.channel(
+      'patogh-shared-data-${currentUserId ?? 'guest'}',
+    );
     const tables = <String>[
       'patogh_events',
       'reservations',
@@ -188,6 +190,7 @@ class PlatformServices {
       interests: List<String>.from(
         (row['interests'] as List?) ?? const <String>[],
       ),
+      avatarUrl: (row['avatar_url'] as String?) ?? '',
       education: (row['education'] as String?) ?? '',
       maritalStatus: (row['marital_status'] as String?) ?? '',
       hasChildren: row['has_children'] as bool?,
@@ -206,6 +209,44 @@ class PlatformServices {
     );
   }
 
+  /// Save a profile picture to Supabase Storage for shared Staging/Production
+  /// profiles. Demo mode stores a compact data URI in the local profile only.
+  static Future<String> saveProfileAvatar({
+    required String fileName,
+    required Uint8List bytes,
+    required String mimeType,
+  }) async {
+    if (bytes.isEmpty) throw ArgumentError('Profile image is empty.');
+
+    final client = _supabase;
+    final userId = currentUserId;
+    if (client == null) {
+      return 'data:$mimeType;base64,${base64Encode(bytes)}';
+    }
+    if (userId == null) {
+      throw StateError('برای ذخیره عکس، ابتدا باید وارد حساب شوی.');
+    }
+
+    final rawExtension = fileName.contains('.')
+        ? fileName.split('.').last.toLowerCase()
+        : 'jpg';
+    final extension =
+        const {'jpg', 'jpeg', 'png', 'webp'}.contains(rawExtension)
+        ? rawExtension
+        : 'jpg';
+    final objectPath =
+        '$userId/avatar-${DateTime.now().microsecondsSinceEpoch}.$extension';
+
+    await client.storage
+        .from('profile-avatars')
+        .uploadBinary(
+          objectPath,
+          bytes,
+          fileOptions: FileOptions(contentType: mimeType, upsert: false),
+        );
+    return client.storage.from('profile-avatars').getPublicUrl(objectPath);
+  }
+
   static Future<void> saveProfile(UserProfile profile) async {
     final userId = currentUserId;
     if (!AppConfig.useSupabase || userId == null) return;
@@ -214,7 +255,7 @@ class PlatformServices {
     final profilePhone =
         authUser?.phone ?? authUser?.userMetadata?['tester_phone']?.toString();
 
-    await _supabase!.from('profiles').upsert({
+    final payload = <String, dynamic>{
       'id': userId,
       'phone': profilePhone,
       'name': profile.name,
@@ -236,10 +277,16 @@ class PlatformServices {
       'terms_accepted_at': DateTime.now().toIso8601String(),
       'terms_version': 'v14-1',
       'privacy_version': 'v14-1',
-    });
+    };
+    if (profile.avatarUrl.startsWith('http')) {
+      payload['avatar_url'] = profile.avatarUrl;
+    }
+    await _supabase!.from('profiles').upsert(payload);
   }
 
-  static Future<List<Map<String, dynamic>>> fetchSuggestedProfilesV14({int limit = 20}) async {
+  static Future<List<Map<String, dynamic>>> fetchSuggestedProfilesV14({
+    int limit = 20,
+  }) async {
     if (!AppConfig.useSupabase || currentUserId == null) return const [];
     final rows = await _supabase!.rpc(
       'list_suggested_profiles_v14',
@@ -250,10 +297,17 @@ class PlatformServices {
         .toList();
   }
 
-  static Future<List<Map<String, dynamic>>> fetchGameRoomsV14({required String gameType}) async {
+  static Future<List<Map<String, dynamic>>> fetchGameRoomsV14({
+    required String gameType,
+  }) async {
     if (!AppConfig.useSupabase || currentUserId == null) return const [];
-    final rows = await _supabase!.rpc('list_game_rooms_v14', params: {'p_game_type': gameType});
-    return (rows as List).map((row) => Map<String, dynamic>.from(row as Map)).toList();
+    final rows = await _supabase!.rpc(
+      'list_game_rooms_v14',
+      params: {'p_game_type': gameType},
+    );
+    return (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
   }
 
   static Future<Map<String, dynamic>> createGameRoomV14({
@@ -264,11 +318,14 @@ class PlatformServices {
     if (!AppConfig.useSupabase || currentUserId == null) {
       throw StateError('برای ساخت اتاق مشترک، ورود به Staging لازم است.');
     }
-    final row = await _supabase!.rpc('create_game_room_v14', params: {
-      'p_game_type': gameType,
-      'p_max_players': maxPlayers,
-      'p_is_private': isPrivate,
-    });
+    final row = await _supabase!.rpc(
+      'create_game_room_v14',
+      params: {
+        'p_game_type': gameType,
+        'p_max_players': maxPlayers,
+        'p_is_private': isPrivate,
+      },
+    );
     return Map<String, dynamic>.from(row as Map);
   }
 
@@ -276,13 +333,19 @@ class PlatformServices {
     if (!AppConfig.useSupabase || currentUserId == null) {
       throw StateError('برای ورود به اتاق مشترک، ورود به Staging لازم است.');
     }
-    final row = await _supabase!.rpc('join_game_room_v14', params: {'p_room_code': roomCode.trim()});
+    final row = await _supabase!.rpc(
+      'join_game_room_v14',
+      params: {'p_room_code': roomCode.trim()},
+    );
     return Map<String, dynamic>.from(row as Map);
   }
 
   static Future<bool> leaveGameRoomV14(String roomId) async {
     if (!AppConfig.useSupabase || currentUserId == null) return false;
-    final result = await _supabase!.rpc('leave_game_room_v14', params: {'p_room_id': roomId});
+    final result = await _supabase!.rpc(
+      'leave_game_room_v14',
+      params: {'p_room_id': roomId},
+    );
     return result == true;
   }
 

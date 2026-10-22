@@ -5,6 +5,7 @@ import 'package:patogh/config/app_config.dart';
 import 'package:patogh/services/platform_services.dart';
 import 'package:patogh/state/app_state.dart';
 import 'package:patogh/theme/patogh_theme.dart';
+import 'package:patogh/widgets/profile_avatar_picker.dart';
 
 class MatchingPage extends StatefulWidget {
   const MatchingPage({super.key});
@@ -84,7 +85,8 @@ class _MatchingPageState extends State<MatchingPage> {
             return _MatchingEmptyState(
               icon: Icons.cloud_off_rounded,
               title: 'دریافت پیشنهادها انجام نشد',
-              message: 'اتصال و نصب Migration پیشنهاد هم‌پاتوقی را بررسی کن.\n${snapshot.error}',
+              message:
+                  'اتصال و نصب Migration پیشنهاد هم‌پاتوقی را بررسی کن.\n${snapshot.error}',
               onRetry: () => setState(() => _peopleFuture = _loadPeople()),
             );
           }
@@ -102,12 +104,17 @@ class _MatchingPageState extends State<MatchingPage> {
             separatorBuilder: (_, _) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final person = people[index];
-              final name = (person['name'] as String?)?.trim().isNotEmpty == true
+              final name =
+                  (person['name'] as String?)?.trim().isNotEmpty == true
                   ? (person['name'] as String).trim()
                   : 'کاربر پاتوق';
               final city = (person['city'] as String?) ?? '';
-              final interests = List<String>.from((person['shared_interests'] as List?) ?? const []);
-              final tags = List<String>.from((person['shared_tags'] as List?) ?? const []);
+              final interests = List<String>.from(
+                (person['shared_interests'] as List?) ?? const [],
+              );
+              final tags = List<String>.from(
+                (person['shared_tags'] as List?) ?? const [],
+              );
               final personality = (person['personality_type'] as String?) ?? '';
               final leisure = (person['leisure_style'] as String?) ?? '';
               final showAge = (person['show_age'] as bool?) ?? false;
@@ -123,33 +130,63 @@ class _MatchingPageState extends State<MatchingPage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const CircleAvatar(
+                    ProfileAvatarImage(
+                      avatarUrl: person['avatar_url'] as String?,
                       radius: 27,
-                      backgroundColor: Color(0xFF2A2A2A),
-                      child: Icon(Icons.person_rounded, size: 30),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(name, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 15,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text([
-                            if (city.isNotEmpty) city,
-                            if (showAge && age is num) '${age.toInt()} سال',
-                          ].join(' • '), style: const TextStyle(color: PatoghTheme.muted, fontSize: 11)),
+                          Text(
+                            [
+                              if (city.isNotEmpty) city,
+                              if (showAge && age is num) '${age.toInt()} سال',
+                            ].join(' • '),
+                            style: const TextStyle(
+                              color: PatoghTheme.muted,
+                              fontSize: 11,
+                            ),
+                          ),
                           if (personality.isNotEmpty || leisure.isNotEmpty) ...[
                             const SizedBox(height: 5),
-                            Text([personality, leisure].where((v) => v.isNotEmpty).join(' • '), style: const TextStyle(fontSize: 11)),
+                            Text(
+                              [
+                                personality,
+                                leisure,
+                              ].where((v) => v.isNotEmpty).join(' • '),
+                              style: const TextStyle(fontSize: 11),
+                            ),
                           ],
                           const SizedBox(height: 8),
                           Text(
-                            shared.isEmpty ? 'هنوز علاقه مشترکی ثبت نشده.' : 'علایق مشترک: ${shared.join('، ')}',
-                            style: const TextStyle(color: PatoghTheme.teal, fontSize: 11, height: 1.5),
+                            shared.isEmpty
+                                ? 'هنوز علاقه مشترکی ثبت نشده.'
+                                : 'علایق مشترک: ${shared.join('، ')}',
+                            style: const TextStyle(
+                              color: PatoghTheme.teal,
+                              fontSize: 11,
+                              height: 1.5,
+                            ),
                           ),
                           const SizedBox(height: 4),
-                          const Text('پیشنهاد بر اساس داده‌های پروفایل؛ بدون امتیاز یا تشخیص روان‌شناختی ساختگی.', style: TextStyle(color: PatoghTheme.muted, fontSize: 9, height: 1.5)),
+                          const Text(
+                            'پیشنهاد بر اساس داده‌های پروفایل؛ بدون امتیاز یا تشخیص روان‌شناختی ساختگی.',
+                            style: TextStyle(
+                              color: PatoghTheme.muted,
+                              fontSize: 9,
+                              height: 1.5,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -169,7 +206,12 @@ class _MatchingEmptyState extends StatelessWidget {
   final String title;
   final String message;
   final VoidCallback? onRetry;
-  const _MatchingEmptyState({required this.icon, required this.title, required this.message, this.onRetry});
+  const _MatchingEmptyState({
+    required this.icon,
+    required this.title,
+    required this.message,
+    this.onRetry,
+  });
 
   @override
   Widget build(BuildContext context) => Center(
@@ -180,12 +222,28 @@ class _MatchingEmptyState extends StatelessWidget {
         children: [
           Icon(icon, size: 48, color: PatoghTheme.teal),
           const SizedBox(height: 14),
-          Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+          ),
           const SizedBox(height: 8),
-          Text(message, textAlign: TextAlign.center, style: const TextStyle(color: PatoghTheme.muted, height: 1.7, fontSize: 12)),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: PatoghTheme.muted,
+              height: 1.7,
+              fontSize: 12,
+            ),
+          ),
           if (onRetry != null) ...[
             const SizedBox(height: 14),
-            OutlinedButton.icon(onPressed: onRetry, icon: const Icon(Icons.refresh_rounded), label: const Text('تلاش دوباره')),
+            OutlinedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('تلاش دوباره'),
+            ),
           ],
         ],
       ),

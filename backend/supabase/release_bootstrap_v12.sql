@@ -14,6 +14,7 @@ create table if not exists public.profiles (
   age int,
   city text not null default 'مشهد',
   interests text[] not null default '{}',
+  avatar_url text,
   education text not null default '',
   marital_status text not null default '',
   has_children boolean,

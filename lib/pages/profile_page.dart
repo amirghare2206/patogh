@@ -20,6 +20,7 @@ import 'package:patogh/pages/social_discovery_page.dart';
 import 'package:patogh/pages/memories_library_page.dart';
 import 'package:patogh/state/app_state.dart';
 import 'package:patogh/theme/patogh_theme.dart';
+import 'package:patogh/widgets/profile_avatar_picker.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -40,15 +41,10 @@ class ProfilePage extends StatelessWidget {
                 style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 20),
-              const Center(
-                child: CircleAvatar(
+              Center(
+                child: ProfileAvatarImage(
+                  avatarUrl: profile?.avatarUrl,
                   radius: 44,
-                  backgroundColor: Color(0xFF2A2A2A),
-                  child: Icon(
-                    Icons.person_rounded,
-                    size: 50,
-                    color: Colors.white,
-                  ),
                 ),
               ),
               const SizedBox(height: 10),
